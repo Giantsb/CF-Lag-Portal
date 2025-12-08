@@ -20,7 +20,7 @@ import {
   BellIcon
 } from './Icons';
 import { MemberData } from '../types';
-import { requestForToken, onMessageListener } from '../services/firebase';
+import { requestForToken, onMessageListener, logAnalyticsEvent } from '../services/firebase';
 import { saveNotificationToken } from '../services/membershipService';
 
 interface DashboardViewProps {
@@ -104,6 +104,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   if (isExpired) barColor = 'bg-brand-danger';
   else if (isExpiringSoon) barColor = 'bg-yellow-500';
   else if (progressPercentage > 85) barColor = 'bg-yellow-500';
+
+  // --- Track Portal View ---
+  useEffect(() => {
+    logAnalyticsEvent('portal_view', { page: 'dashboard', status: member.status });
+  }, [member.status]);
 
   // --- Fetch Holidays ---
   useEffect(() => {
@@ -256,7 +261,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
       <div className="lg:hidden fixed top-0 w-full bg-brand-dark z-50 px-4 py-3 flex justify-between items-center border-b border-brand-accent/10">
         <div className="flex items-center gap-2">
            <DumbbellIcon className="w-8 h-8 text-brand-accent" />
-           <span className="font-bold text-lg">HOA Portal</span>
+           <span className="font-bold text-lg">CrossFit Lagos</span>
         </div>
         <button onClick={toggleSidebar} className="text-white">
           {isSidebarOpen ? <XIcon /> : <MenuIcon />}
@@ -271,7 +276,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                   <DumbbellIcon className="w-6 h-6" />
                </div>
                <div>
-                  <h1 className="font-bold text-lg leading-tight">HOUSE OF<br/>ATHLETES</h1>
+                  <h1 className="font-bold text-lg leading-tight">CROSSFIT<br/>LAGOS</h1>
                </div>
             </div>
          </div>
@@ -411,7 +416,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                            </div>
                            <div className="flex justify-between border-b border-white/5 pb-2">
                               <span className="text-gray-400">Duration</span>
-                              <span className="font-medium text-white">{member.duration} months</span>
+                              <span className="font-medium text-white">{member.duration} {member.duration === '1' ? 'month' : 'months'}</span>
                            </div>
                            <div className="flex justify-between border-b border-white/5 pb-2">
                               <span className="text-gray-400">Amount</span>

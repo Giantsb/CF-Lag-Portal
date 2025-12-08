@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DumbbellIcon, EyeIcon, EyeOffIcon } from './Icons';
 import { verifyPhoneExists, getMemberByPhone } from '../services/membershipService';
-import { auth, signInWithEmailAndPassword, getEmailFromPhone, getPasswordFromPin } from '../services/firebase';
+import { auth, signInWithEmailAndPassword, getEmailFromPhone, getPasswordFromPin, logAnalyticsEvent } from '../services/firebase';
 import { MemberData } from '../types';
 
 interface LoginViewProps {
@@ -14,6 +14,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -40,11 +41,18 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
       
       await signInWithEmailAndPassword(auth, email, password);
       
+      // Log analytics event
+      logAnalyticsEvent('user_login_success', { method: 'firebase_auth' });
+
       // 2. If successful, auth listener in App.tsx will handle the state change.
       // We manually fetch just to confirm validity for UI feedback if needed, 
       // but strictly speaking the listener handles the transition.
       const member = await getMemberByPhone(phone);
       if (member) {
+        if (rememberMe) {
+          // Firebase persistence handles this mostly, but if you have custom logic:
+          // localStorage.setItem('hoa_remember_phone', phone);
+        }
         onLoginSuccess(member);
       } else {
         setError('Login successful, but member details not found.');
@@ -148,9 +156,18 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
             </div>
             
             <div className="flex justify-between items-start mt-1">
-              <p className="text-xs text-gray-500">
-                First time? Setup PIN below.
-              </p>
+              <div className="flex items-center">
+                 <input 
+                   id="remember-me"
+                   type="checkbox" 
+                   checked={rememberMe}
+                   onChange={(e) => setRememberMe(e.target.checked)}
+                   className="h-4 w-4 rounded border-gray-700 bg-brand-black text-brand-accent focus:ring-brand-accent accent-brand-accent"
+                 />
+                 <label htmlFor="remember-me" className="ml-2 block text-xs text-gray-400 cursor-pointer">
+                   Remember me
+                 </label>
+              </div>
               <button 
                 type="button"
                 onClick={handleForgotPasswordClick}

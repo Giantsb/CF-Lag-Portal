@@ -9,7 +9,8 @@ import {
   getPasswordFromPin,
   db,
   doc,
-  setDoc
+  setDoc,
+  logAnalyticsEvent
 } from '../services/firebase';
 import { MemberData } from '../types';
 
@@ -71,6 +72,9 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
            registeredAt: new Date(),
            profile: 'main'
         });
+
+        // Log analytics event
+        logAnalyticsEvent('new_member_registered', { method: 'pin_setup' });
 
       } catch (authError: any) {
         // If user already exists (auth/email-already-in-use), this is a PIN RESET.

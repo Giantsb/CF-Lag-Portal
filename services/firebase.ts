@@ -17,6 +17,10 @@ import {
   getToken, 
   onMessage 
 } from "firebase/messaging";
+import {
+  getAnalytics,
+  logEvent
+} from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDQDQPEtuwaidKkPY2dAVJmOfsF9HsnAtg",
@@ -24,7 +28,8 @@ const firebaseConfig = {
   projectId: "crossfit-lagos",
   storageBucket: "crossfit-lagos.firebasestorage.app",
   messagingSenderId: "223587202820",
-  appId: "1:223587202820:web:b153b48501ee447a480251"
+  appId: "1:223587202820:web:b153b48501ee447a480251",
+  measurementId: "G-MEASUREMENT_ID" // Optional: Add if you have a specific measurement ID
 };
 
 const VAPID_KEY = "BKYrzCjx5Q3yKcqxkHzaEr7a17gT5-P2bWLDSbrEw3yrck_kEmHq1GESTaWlIttYhQCDev1QcWUyW77NcBIwNsM";
@@ -33,6 +38,16 @@ const VAPID_KEY = "BKYrzCjx5Q3yKcqxkHzaEr7a17gT5-P2bWLDSbrEw3yrck_kEmHq1GESTaWlI
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Analytics Initialization
+let analytics = null;
+try {
+  if (typeof window !== 'undefined') {
+    analytics = getAnalytics(app);
+  }
+} catch (err) {
+  console.error('Analytics failed to init', err);
+}
 
 // Messaging initialization requires handling browser compatibility
 let messaging = null;
@@ -53,6 +68,17 @@ export const getEmailFromPhone = (phone: string) => {
 // Helper to construct password from PIN (Firebase requires 6 chars min)
 export const getPasswordFromPin = (pin: string) => {
   return `${pin}00`; // Append 00 to meet length requirement transparently
+};
+
+// Analytics Helper
+export const logAnalyticsEvent = (eventName: string, params?: any) => {
+  if (analytics) {
+    try {
+      logEvent(analytics, eventName, params);
+    } catch (e) {
+      console.warn('Failed to log analytics event', e);
+    }
+  }
 };
 
 // Messaging Wrappers
