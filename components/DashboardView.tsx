@@ -609,16 +609,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Bank Name</span>
-                    <span className="text-white font-medium">Moniepoint</span>
+                    <span className="text-white font-medium">Access Bank</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Account Name</span>
-                    <span className="text-white font-medium">House of Athletes</span>
+                    <span className="text-white font-medium">CrossFit Lagos Limited</span>
                   </div>
                   <div className="mt-2 pt-2 border-t border-brand-accent/20 flex items-center justify-between">
                     <span className="text-gray-400 text-sm">Account Number</span>
                     <div className="flex items-center gap-2">
-                       <span className="font-mono text-xl font-bold text-white tracking-wider">8236166649</span>
+                       <span className="font-mono text-xl font-bold text-white tracking-wider">0078409920</span>
                        <button 
                          onClick={handleCopy}
                          className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-brand-accent"
