@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { LockIcon, EyeIcon, EyeOffIcon } from './Icons';
 import { createPin, getMemberByPhone } from '../services/membershipService';
 import { hashPin } from '../utils/encryption';
+import { 
+  auth, 
+  createUserWithEmailAndPassword, 
+  getEmailFromPhone, 
+  getPasswordFromPin,
+  db,
+  doc,
+  setDoc
+} from '../services/firebase';
 import { MemberData } from '../types';
 
 interface PinSetupViewProps {
@@ -36,36 +45,69 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
 
     setLoading(true);
 
-    // Hash the PIN before sending to backend
-    // Never send plain text PINs
-    const hashedPin = hashPin(newPin, phone);
+    try {
+      // 1. Create/Sync with Google Sheet (Legacy/Admin Backend)
+      // We still do this so the Admin Sheet is updated
+      const hashedPin = hashPin(newPin, phone);
+      const sheetResult = await createPin(phone, hashedPin);
 
-    const result = await createPin(phone, hashedPin);
+      if (!sheetResult.success) {
+         throw new Error(sheetResult.message || 'Failed to update database');
+      }
 
-    if (result.success) {
+      // 2. Register with Firebase Auth (Persistence Layer)
+      const email = getEmailFromPhone(phone);
+      const password = getPasswordFromPin(newPin);
+
+      // We attempt to create a user. If they exist (resetting PIN), we might need to handle that differently
+      // ideally using updatePassword, but for simplicity in this "Setup" flow which acts as Register:
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 3. Store marker in Firestore
+        await setDoc(doc(db, "users", user.uid), {
+           phone: phone,
+           registeredAt: new Date(),
+           profile: 'main'
+        });
+
+      } catch (authError: any) {
+        // If user already exists (auth/email-already-in-use), this is a PIN RESET.
+        // In a real email/pass flow, we'd need old password to change it.
+        // However, since we are admin-controlled via Sheet, we might just want to 
+        // let them "Login" if the PIN matches, OR strictly speaking, we can't update 
+        // the Firebase password without the old one or an admin SDK.
+        
+        // For this specific implementation request:
+        // If email in use, we assume they are trying to reset.
+        if (authError.code === 'auth/email-already-in-use') {
+           setError('Account exists. Please contact admin to reset Firebase password or try logging in.');
+           setLoading(false);
+           return;
+        } else {
+           throw authError;
+        }
+      }
+
       setSuccess(`PIN ${isReset ? 'reset' : 'created'} successfully! Logging you in...`);
       
-      // Fetch member data in parallel with the delay
-      // This ensures we have data ready to auto-login the user
-      try {
-        const [member] = await Promise.all([
-          getMemberByPhone(phone),
-          new Promise(resolve => setTimeout(resolve, 2000))
-        ]);
+      // 4. Fetch member data and finish
+      const [member] = await Promise.all([
+        getMemberByPhone(phone),
+        new Promise(resolve => setTimeout(resolve, 2000))
+      ]);
 
-        if (member) {
-          onSuccess(member);
-        } else {
-          // If we can't fetch the member, fallback to onBack which goes to login
-          setError('PIN created, but unable to auto-login. Please try logging in manually.');
-          setTimeout(onBack, 2000);
-        }
-      } catch (e) {
-        setError('PIN created, but an error occurred. Please try logging in manually.');
+      if (member) {
+        onSuccess(member);
+      } else {
+        setError('PIN created, but unable to auto-login. Please try logging in manually.');
         setTimeout(onBack, 2000);
       }
-    } else {
-      setError(result.message || 'An error occurred');
+
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'An error occurred during setup.');
     }
 
     setLoading(false);

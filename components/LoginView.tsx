@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { DumbbellIcon, EyeIcon, EyeOffIcon } from './Icons';
-import { fetchMemberData, verifyPhoneExists } from '../services/membershipService';
-import { hashPin } from '../utils/encryption';
-import { ViewState, MemberData } from '../types';
+import { verifyPhoneExists, getMemberByPhone } from '../services/membershipService';
+import { auth, signInWithEmailAndPassword, getEmailFromPhone, getPasswordFromPin } from '../services/firebase';
+import { MemberData } from '../types';
 
 interface LoginViewProps {
   onLoginSuccess: (member: MemberData) => void;
@@ -14,7 +14,6 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -34,23 +33,48 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
       return;
     }
 
-    // Hash the PIN before sending to the backend service
-    const hashedPin = hashPin(pin, phone);
-
-    const result = await fetchMemberData(phone, hashedPin);
-
-    if (result.success) {
-      if (result.needsSetup) {
-        onRequireSetup(phone);
-      } else if (result.member) {
-        if (rememberMe) {
-          // Store the HASHED credential, never the plain text PIN
-          localStorage.setItem('hoa_session', JSON.stringify({ phone, pin: hashedPin }));
-        }
-        onLoginSuccess(result.member);
+    try {
+      // 1. Attempt to sign in with Firebase (Persistent Session)
+      const email = getEmailFromPhone(phone);
+      const password = getPasswordFromPin(pin);
+      
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      // 2. If successful, auth listener in App.tsx will handle the state change.
+      // We manually fetch just to confirm validity for UI feedback if needed, 
+      // but strictly speaking the listener handles the transition.
+      const member = await getMemberByPhone(phone);
+      if (member) {
+        onLoginSuccess(member);
+      } else {
+        setError('Login successful, but member details not found.');
       }
-    } else {
-      setError(result.error || 'Login failed');
+
+    } catch (firebaseError: any) {
+      console.log("Firebase login failed, checking legacy/sheet:", firebaseError.code);
+      
+      // Handle User Not Found - This implies they exist in Sheet but haven't setup Firebase Auth yet
+      if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/user-not-found') {
+        
+        // Check if user exists in the Sheet to determine if they need to Setup PIN (Register)
+        const verifyResult = await verifyPhoneExists(phone);
+        if (verifyResult.success) {
+          // User exists in Sheet, but not in Firebase -> Need to Setup/Register
+          // Or they entered the wrong PIN.
+          
+          // Since we can't verify the PIN against the Sheet without the legacy logic,
+          // and we want to move to Firebase, we will assume they need to Setup/Reset 
+          // if Firebase auth fails.
+          setError('Invalid PIN or Account not set up.');
+          
+          // Optional: You could auto-redirect to setup if you are sure they haven't registered
+          // onRequireSetup(phone); 
+        } else {
+          setError('Phone number not found in records.');
+        }
+      } else {
+        setError('Login failed: ' + (firebaseError.message || 'Unknown error'));
+      }
     }
 
     setLoading(false);
@@ -82,7 +106,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
           <div className="inline-block p-4 bg-brand-accent/10 rounded-full mb-4 text-brand-accent">
             <DumbbellIcon />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">HOUSE OF ATHLETES</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">CrossFit Lagos</h1>
           <p className="text-brand-accent font-semibold mb-1">Membership Portal</p>
           <p className="text-gray-400 text-sm">Login to view your subscription</p>
         </div>
@@ -125,29 +149,16 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
             
             <div className="flex justify-between items-start mt-1">
               <p className="text-xs text-gray-500">
-                First time? You'll be asked to create a PIN
+                First time? Setup PIN below.
               </p>
               <button 
                 type="button"
                 onClick={handleForgotPasswordClick}
                 className="text-xs text-brand-accent hover:underline focus:outline-none"
               >
-                Forgot PIN?
+                Forgot/Setup PIN?
               </button>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input 
-              type="checkbox" 
-              id="rememberMe"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-700 bg-brand-black text-brand-accent focus:ring-brand-accent accent-brand-accent"
-            />
-            <label htmlFor="rememberMe" className="text-sm text-gray-300 select-none cursor-pointer">
-              Remember Me
-            </label>
           </div>
 
           {error && (
@@ -167,7 +178,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
 
         <div className="mt-6 text-center text-sm text-gray-400">
           <p>Having trouble logging in?</p>
-          <p className="mt-1">Contact House of Athletes administration</p>
+          <p className="mt-1">Contact CrossFit Lagos administration</p>
         </div>
       </div>
     </div>

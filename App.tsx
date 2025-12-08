@@ -3,7 +3,8 @@ import LoginView from './components/LoginView';
 import PinSetupView from './components/PinSetupView';
 import DashboardView from './components/DashboardView';
 import { ViewState, MemberData } from './types';
-import { fetchMemberData } from './services/membershipService';
+import { getMemberByPhone } from './services/membershipService';
+import { auth, onAuthStateChanged, signOut } from './services/firebase';
 
 function App() {
   const [viewState, setViewState] = useState<ViewState>(ViewState.LOGIN);
@@ -12,32 +13,39 @@ function App() {
   const [isResetMode, setIsResetMode] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
 
-  // Check for persisted session on mount
+  // Check for persisted session via Firebase Auth
   useEffect(() => {
-    const checkSession = async () => {
-      const storedSession = localStorage.getItem('hoa_session');
-      if (storedSession) {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user && user.email) {
+        // User is signed in, fetch their member data
         try {
-          const { phone, pin } = JSON.parse(storedSession);
-          if (phone && pin) {
-            const result = await fetchMemberData(phone, pin);
-            if (result.success && result.member) {
-              setMemberData(result.member);
-              setViewState(ViewState.DASHBOARD);
-            } else {
-              // If credentials are no longer valid, clear session
-              localStorage.removeItem('hoa_session');
-            }
+          // Extract phone from synthetic email (phone@crossfitlagos.app)
+          const phone = user.email.split('@')[0];
+          const member = await getMemberByPhone(phone);
+          
+          if (member) {
+            setMemberData(member);
+            setViewState(ViewState.DASHBOARD);
+          } else {
+            // User authenticated but not found in Sheet (rare edge case)
+            console.error('User authenticated but not found in records');
+            // Optional: signOut(auth);
+            setViewState(ViewState.LOGIN);
           }
         } catch (e) {
-          console.error("Failed to restore session", e);
-          localStorage.removeItem('hoa_session');
+          console.error("Failed to fetch member data for auth user", e);
+          setViewState(ViewState.LOGIN);
         }
+      } else {
+        // User is signed out
+        setMemberData(null);
+        setViewState(ViewState.LOGIN);
       }
       setIsSessionLoading(false);
-    };
+    });
 
-    checkSession();
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   const handleLoginSuccess = (data: MemberData) => {
@@ -57,12 +65,16 @@ function App() {
     setViewState(ViewState.SETUP_PIN);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('hoa_session');
-    setMemberData(null);
-    setSetupPhone('');
-    setIsResetMode(false);
-    setViewState(ViewState.LOGIN);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setMemberData(null);
+      setSetupPhone('');
+      setIsResetMode(false);
+      setViewState(ViewState.LOGIN);
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
   };
 
   const handleSetupSuccess = (member: MemberData) => {

@@ -1,7 +1,23 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged 
+} from "firebase/auth";
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc 
+} from "firebase/firestore";
+import { 
+  getMessaging, 
+  getToken, 
+  onMessage 
+} from "firebase/messaging";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDQDQPEtuwaidKkPY2dAVJmOfsF9HsnAtg",
   authDomain: "crossfit-lagos.firebaseapp.com",
@@ -11,23 +27,44 @@ const firebaseConfig = {
   appId: "1:223587202820:web:b153b48501ee447a480251"
 };
 
-// VAPID Key provided
 const VAPID_KEY = "BKYrzCjx5Q3yKcqxkHzaEr7a17gT5-P2bWLDSbrEw3yrck_kEmHq1GESTaWlIttYhQCDev1QcWUyW77NcBIwNsM";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
+// Messaging initialization requires handling browser compatibility
+let messaging = null;
+try {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        messaging = getMessaging(app);
+    }
+} catch (err) {
+    console.error('Messaging failed to init', err);
+}
+
+// Helper to construct synthetic email from phone
+export const getEmailFromPhone = (phone: string) => {
+  const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+  return `${cleanPhone}@crossfitlagos.app`;
+};
+
+// Helper to construct password from PIN (Firebase requires 6 chars min)
+export const getPasswordFromPin = (pin: string) => {
+  return `${pin}00`; // Append 00 to meet length requirement transparently
+};
+
+// Messaging Wrappers
 export const requestForToken = async () => {
+  if (!messaging) return null;
   try {
     const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
     if (currentToken) {
       console.log('FCM Token:', currentToken);
-      // In a real app, you would send this token to your backend (Google Sheet/Script)
-      // to associate it with the user's phone number.
       return currentToken;
     } else {
-      console.log('No registration token available. Request permission to generate one.');
+      console.log('No registration token available.');
       return null;
     }
   } catch (err) {
@@ -38,9 +75,24 @@ export const requestForToken = async () => {
 
 export const onMessageListener = () =>
   new Promise((resolve) => {
-    onMessage(messaging, (payload) => {
-      resolve(payload);
-    });
+    if (messaging) {
+      onMessage(messaging, (payload) => {
+        resolve(payload);
+      });
+    }
   });
 
-export { messaging };
+// Export instances and modular functions directly
+export { 
+  app, 
+  auth, 
+  db, 
+  messaging,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  doc,
+  setDoc,
+  getDoc
+};
