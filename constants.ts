@@ -1,0 +1,2 @@
+export const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTt8lyoGhOcVWFvR0LofEdxViRXWliIehiTyzL6P9aTiojLJkn8DxP-bFQexoq1NkRMx5Pz8sFaPFKN/pub?gid=1322214345&single=true&output=csv';
+export const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6s5w-Hb-2gFE-bD9yzbwIxC0lCR7mdCybrD_VDmDLN5eWiEXacjyVuTvxnrzIjsHnLw/exec';

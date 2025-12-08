@@ -1,0 +1,5 @@
+{
+  "name": "CrossFit Lagos Portal ",
+  "description": "A membership portal for House of Athletes allowing members to view their subscription status, package details, and manage access via PIN.",
+  "requestFramePermissions": []
+}
