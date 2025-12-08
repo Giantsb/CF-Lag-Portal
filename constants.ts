@@ -1,2 +1,2 @@
-export const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTt8lyoGhOcVWFvR0LofEdxViRXWliIehiTyzL6P9aTiojLJkn8DxP-bFQexoq1NkRMx5Pz8sFaPFKN/pub?gid=1322214345&single=true&output=csv';
-export const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6s5w-Hb-2gFE-bD9yzbwIxC0lCR7mdCybrD_VDmDLN5eWiEXacjyVuTvxnrzIjsHnLw/exec';
+export const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTWmXbbuYuR52mpYRrrxfwr5GSO9kPEx6oJ0Z-bdlGYPK0D7KVCdeMbMGK5rHfsXxdh2k31WIb1Vv2j/pub?gid=1322214345&single=true&output=csv';
+export const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCPUr6Hafv7qULA6JD297ykIswRQ5VtXv1v4VOrVAZ3y8h9_HLKP2Cf82ZQ2dd5cc1/exec';
