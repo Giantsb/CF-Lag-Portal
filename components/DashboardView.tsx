@@ -21,6 +21,7 @@ import {
 } from './Icons';
 import { MemberData } from '../types';
 import { requestForToken, onMessageListener } from '../services/firebase';
+import { saveNotificationToken } from '../services/membershipService';
 
 interface DashboardViewProps {
   member: MemberData;
@@ -159,8 +160,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
     }).catch(err => console.log('failed: ', err));
   }, []);
 
-  const handleEnableNotifications = () => {
-    requestForToken();
+  const handleEnableNotifications = async () => {
+    const token = await requestForToken();
+    if (token) {
+      // Save the token to the backend associated with this user
+      await saveNotificationToken(member.phone, token);
+      alert("Notifications enabled! You will now receive updates.");
+    }
     setIsSidebarOpen(false);
   };
 

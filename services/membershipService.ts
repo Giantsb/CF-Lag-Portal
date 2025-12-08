@@ -268,3 +268,28 @@ export const createPin = async (phone: string, hashedPin: string): Promise<{ suc
     return { success: false, message: 'Unable to setup PIN. Please contact gym administration.' };
   }
 };
+
+/**
+ * Saves the FCM notification token to the backend.
+ * @param phone - The user's phone number
+ * @param token - The Firebase Cloud Messaging token
+ */
+export const saveNotificationToken = async (phone: string, token: string): Promise<void> => {
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'saveToken',
+        phone: phone,
+        token: token
+      })
+    });
+    console.log('Token saved to backend');
+  } catch (err) {
+    console.error('Failed to save token:', err);
+  }
+};
