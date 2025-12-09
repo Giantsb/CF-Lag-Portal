@@ -1,6 +1,12 @@
 {
   "name": "CrossFit Lagos Portal",
   "short_name": "CrossFit Lagos",
+  "description": "Membership portal for CrossFit Lagos athletes.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "/cfl-icon-180.png",
@@ -18,10 +24,5 @@
       "type": "image/png"
     }
   ],
-  "start_url": "/index.html",
-  "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#FF0000",
-  "requestFramePermissions": [],
-  "description": ""
+  "requestFramePermissions": []
 }
