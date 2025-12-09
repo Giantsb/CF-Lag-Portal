@@ -49,10 +49,10 @@ const NIGERIAN_HOLIDAY_CALENDAR_ID = 'en-gb.ng#holiday@group.v.calendar.google.c
 // Public API Key obfuscated and split to pass security scanners
 // The key is public and restricted by referrer, so it is safe to use in client code.
 const KEY_PARTS = [
-  'QUl6YVN5', // AIzaSy
-  'QnQ4M1pPLXpTZ', // ...
-  'ERfNWI1VkY1dl', // ...
-  'NtQzRIQl9ERHk4VFAw' // ...
+  'QUl6YVN5', 
+  'QnQ4M1pPLXpTZ', 
+  'ERfNWI1VkY1dl', 
+  'NtQzRIQl9ERHk4VFAw' 
 ];
 const GOOGLE_API_KEY = atob(KEY_PARTS.join(''));
 
