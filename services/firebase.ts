@@ -22,17 +22,21 @@ import {
   logEvent
 } from "firebase/analytics";
 
+// Fix: Cast import.meta to any to avoid TypeScript error about 'env' property
+const env = (import.meta as any).env;
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDQDQPE" + "tuwaidKkPY2dAVJmOfsF9HsnAtg",
-  authDomain: "crossfit-lagos.firebaseapp.com",
-  projectId: "crossfit-lagos",
-  storageBucket: "crossfit-lagos.firebasestorage.app",
-  messagingSenderId: "223587202820",
-  appId: "1:223587202820:web:" + "b153b48501ee447a480251",
-  measurementId: "G-92Z38CF9FL" // Optional: Add if you have a specific measurement ID
+  apiKey: env.VITE_FIREBASE_API_KEY,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: env.VITE_FIREBASE_APP_ID,
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-const VAPID_KEY = "BKYrzCjx5Q3yKcqxkHzaEr7a17gT5-P2bWLDSbrEw3yrck" + "_kEmHq1GESTaWlIttYhQCDev1QcWUyW77NcBIwNsM";
+const VAPID_KEY = env.VITE_FIREBASE_VAPID_KEY;
+
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
