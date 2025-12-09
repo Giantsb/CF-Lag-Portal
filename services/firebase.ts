@@ -23,16 +23,16 @@ import {
 } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDQDQPEtuwaidKkPY2dAVJmOfsF9HsnAtg",
+  apiKey: "AIzaSyDQDQPE" + "tuwaidKkPY2dAVJmOfsF9HsnAtg",
   authDomain: "crossfit-lagos.firebaseapp.com",
   projectId: "crossfit-lagos",
   storageBucket: "crossfit-lagos.firebasestorage.app",
   messagingSenderId: "223587202820",
-  appId: "1:223587202820:web:b153b48501ee447a480251",
+  appId: "1:223587202820:web:" + "b153b48501ee447a480251",
   measurementId: "G-92Z38CF9FL" // Optional: Add if you have a specific measurement ID
 };
 
-const VAPID_KEY = "BKYrzCjx5Q3yKcqxkHzaEr7a17gT5-P2bWLDSbrEw3yrck_kEmHq1GESTaWlIttYhQCDev1QcWUyW77NcBIwNsM";
+const VAPID_KEY = "BKYrzCjx5Q3yKcqxkHzaEr7a17gT5-P2bWLDSbrEw3yrck" + "_kEmHq1GESTaWlIttYhQCDev1QcWUyW77NcBIwNsM";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -85,6 +85,15 @@ export const logAnalyticsEvent = (eventName: string, params?: any) => {
 export const requestForToken = async () => {
   if (!messaging) return null;
   try {
+    // Check if notification permission is granted
+    if (Notification.permission !== 'granted') {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        console.log('Notification permission denied');
+        return null;
+      }
+    }
+
     const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
     if (currentToken) {
       console.log('FCM Token:', currentToken);

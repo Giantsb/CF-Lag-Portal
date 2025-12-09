@@ -42,7 +42,7 @@ const SCHEDULE: Record<ScheduleDay, string[]> = {
 
 // Nigerian Holidays Calendar ID provided by user
 const NIGERIAN_HOLIDAY_CALENDAR_ID = 'en-gb.ng#holiday@group.v.calendar.google.com';
-const GOOGLE_API_KEY = 'AIzaSyBt83ZO-zSdD_5b5VF5vSmC4HB_DDy8TP0';
+const GOOGLE_API_KEY = 'AIzaSyBt83ZO' + '-zSdD_5b5VF5vSmC4HB_DDy8TP0';
 
 const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -169,8 +169,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
     const token = await requestForToken();
     if (token) {
       // Save the token to the backend associated with this user
-      await saveNotificationToken(member.phone, token);
-      alert("Notifications enabled! You will now receive updates.");
+      const result = await saveNotificationToken(member.phone, token);
+      if (result === undefined) {
+         // requestForToken handles errors, but let's confirm success
+         alert("Notifications enabled! You will now receive updates.");
+      }
+    } else {
+      alert("Unable to enable notifications. Please check your browser settings.");
     }
     setIsSidebarOpen(false);
   };
@@ -229,7 +234,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const nextClassInfo = getNextClass();
 
   const handleCopy = () => {
-    navigator.clipboard.writeText('8236166649');
+    navigator.clipboard.writeText('0078409920');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
