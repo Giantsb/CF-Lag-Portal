@@ -23,7 +23,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/logo192.png' // You might want to update this to a valid icon path
+    icon: '/cfl-icon-190.png' // Updated to valid icon path
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
