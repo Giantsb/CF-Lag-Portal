@@ -29,7 +29,7 @@ const firebaseConfig = {
   storageBucket: "crossfit-lagos.firebasestorage.app",
   messagingSenderId: "223587202820",
   appId: "1:223587202820:web:b153b48501ee447a480251",
-  measurementId: "G-MEASUREMENT_ID" // Optional: Add if you have a specific measurement ID
+  measurementId: "G-92Z38CF9FL" // Optional: Add if you have a specific measurement ID
 };
 
 const VAPID_KEY = "BKYrzCjx5Q3yKcqxkHzaEr7a17gT5-P2bWLDSbrEw3yrck_kEmHq1GESTaWlIttYhQCDev1QcWUyW77NcBIwNsM";
