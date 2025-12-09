@@ -10,8 +10,20 @@ if (!rootElement) {
 if ('serviceWorker' in navigator) {
   // Pass Firebase config to Service Worker via URL parameters
   // This avoids hardcoding secrets in the static service worker file
-  // Fix: Cast import.meta to any to avoid TypeScript error about 'env' property
-  const env = (import.meta as any).env;
+  
+  // Safe environment variable access
+  const getEnv = () => {
+    try {
+      if ((import.meta as any).env) return (import.meta as any).env;
+    } catch (e) {}
+    try {
+      if (typeof process !== 'undefined' && process.env) return process.env;
+    } catch (e) {}
+    return {};
+  };
+  
+  const env = getEnv();
+
   const firebaseConfig = {
     apiKey: env.VITE_FIREBASE_API_KEY,
     authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -22,14 +34,17 @@ if ('serviceWorker' in navigator) {
     measurementId: env.VITE_FIREBASE_MEASUREMENT_ID
   };
 
-  const swUrl = `./firebase-messaging-sw.js?firebaseConfig=${encodeURIComponent(JSON.stringify(firebaseConfig))}`;
+  // Only attempt registration if apiKey exists
+  if (firebaseConfig.apiKey) {
+      const swUrl = `./firebase-messaging-sw.js?firebaseConfig=${encodeURIComponent(JSON.stringify(firebaseConfig))}`;
 
-  navigator.serviceWorker.register(swUrl)
-    .then(function(registration) {
-      console.log('Registration successful, scope is:', registration.scope);
-    }).catch(function(err) {
-      console.log('Service worker registration failed, error:', err);
-    });
+      navigator.serviceWorker.register(swUrl)
+        .then(function(registration) {
+          console.log('Registration successful, scope is:', registration.scope);
+        }).catch(function(err) {
+          console.log('Service worker registration failed, error:', err);
+        });
+  }
 }
 
 const root = ReactDOM.createRoot(rootElement);

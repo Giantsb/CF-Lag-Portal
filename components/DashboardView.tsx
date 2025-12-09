@@ -23,9 +23,6 @@ import { MemberData } from '../types';
 import { requestForToken, onMessageListener, logAnalyticsEvent } from '../services/firebase';
 import { saveNotificationToken } from '../services/membershipService';
 
-// Access environment variables safely
-const env = (import.meta as any).env;
-
 interface DashboardViewProps {
   member: MemberData;
   onLogout: () => void;

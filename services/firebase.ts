@@ -22,8 +22,18 @@ import {
   logEvent
 } from "firebase/analytics";
 
-// Fix: Cast import.meta to any to avoid TypeScript error about 'env' property
-const env = (import.meta as any).env;
+// Safe environment variable access
+const getEnv = () => {
+  try {
+    if ((import.meta as any).env) return (import.meta as any).env;
+  } catch (e) {}
+  try {
+    if (typeof process !== 'undefined' && process.env) return process.env;
+  } catch (e) {}
+  return {};
+};
+
+const env = getEnv();
 
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY,
