@@ -23,6 +23,9 @@ import { MemberData } from '../types';
 import { requestForToken, onMessageListener, logAnalyticsEvent } from '../services/firebase';
 import { saveNotificationToken } from '../services/membershipService';
 
+// Access environment variables safely
+const env = (import.meta as any).env;
+
 interface DashboardViewProps {
   member: MemberData;
   onLogout: () => void;
@@ -42,7 +45,7 @@ const SCHEDULE: Record<ScheduleDay, string[]> = {
 
 // Nigerian Holidays Calendar ID provided by user
 const NIGERIAN_HOLIDAY_CALENDAR_ID = 'en-gb.ng#holiday@group.v.calendar.google.com';
-const GOOGLE_API_KEY = 'AIzaSyBt83ZO' + '-zSdD_5b5VF5vSmC4HB_DDy8TP0';
+const GOOGLE_API_KEY = env.VITE_GOOGLE_CALENDAR_API_KEY;
 
 const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -113,6 +116,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   // --- Fetch Holidays ---
   useEffect(() => {
     const fetchHolidays = async () => {
+      // If no API key is set, we can't fetch holidays
+      if (!GOOGLE_API_KEY) {
+        console.warn('Google Calendar API Key not set');
+        setHolidayError(true);
+        return;
+      }
+
       try {
         const now = new Date();
         const timeMin = now.toISOString();

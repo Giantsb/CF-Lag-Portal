@@ -1,2 +1,6 @@
-export const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTWmXbbuYuR52mpYRrrxfwr5GSO9kPEx6oJ0Z-bdlGYPK0D7KVCdeMbMGK5rHfsXxdh2k31WIb1Vv2j/pub?gid=1322214345&single=true&output=csv';
-export const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0c3eKds2shS31IzBX_-s8Gvgske8zouRf1Nqo6vk1qD3hOKy9PQFYY0spL4wpnDQh/exec';
+
+// Fix: Cast import.meta to any to avoid TypeScript error about 'env' property
+const env = (import.meta as any).env;
+
+export const SHEET_URL = env.VITE_GOOGLE_SHEET_URL;
+export const SCRIPT_URL = env.VITE_GOOGLE_SCRIPT_URL;
