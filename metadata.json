@@ -1,5 +1,28 @@
 {
-  "name": "CrossFit Lagos Portal ",
+  "name": "CrossFit Lagos Portal",
+  "short_name": "CF Gym Portal",
   "description": "A membership portal for House of Athletes allowing members to view their subscription status, package details, and manage access via PIN.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/cfl-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/cfl-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/cfl-icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
   "requestFramePermissions": []
 }
