@@ -283,7 +283,7 @@ export const saveNotificationToken = async (phone: string, token: string): Promi
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        action: 'saveToken',
+        action: 'saveNotificationToken',
         phone: phone,
         token: token
       })
