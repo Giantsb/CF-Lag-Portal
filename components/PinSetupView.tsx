@@ -48,8 +48,10 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
 
     try {
       // 1. Create/Sync with Google Sheet (Legacy/Admin Backend)
-      // We still do this so the Admin Sheet is updated
       const hashedPin = hashPin(newPin, phone);
+      
+      // We pass 'true' to indicate we expect a response, though CORS might block reading it
+      // The backend script MUST allow overwriting for this to work as a reset.
       const sheetResult = await createPin(phone, hashedPin);
 
       if (!sheetResult.success) {
@@ -60,8 +62,6 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
       const email = getEmailFromPhone(phone);
       const password = getPasswordFromPin(newPin);
 
-      // We attempt to create a user. If they exist (resetting PIN), we might need to handle that differently
-      // ideally using updatePassword, but for simplicity in this "Setup" flow which acts as Register:
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
@@ -78,17 +78,11 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
 
       } catch (authError: any) {
         // If user already exists (auth/email-already-in-use), this is a PIN RESET.
-        // In a real email/pass flow, we'd need old password to change it.
-        // However, since we are admin-controlled via Sheet, we might just want to 
-        // let them "Login" if the PIN matches, OR strictly speaking, we can't update 
-        // the Firebase password without the old one or an admin SDK.
-        
-        // For this specific implementation request:
-        // If email in use, we assume they are trying to reset.
         if (authError.code === 'auth/email-already-in-use') {
-           setError('Account exists. Please contact admin to reset Firebase password or try logging in.');
-           setLoading(false);
-           return;
+           console.log('User exists, treating as PIN Reset/Update');
+           // We proceed because we successfully updated the Google Sheet in Step 1.
+           // The user will now have a mismatch between Firebase Password (old PIN) and Sheet PIN (new PIN).
+           // LoginView will handle this via Fallback Login.
         } else {
            throw authError;
         }
@@ -97,15 +91,15 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
       setSuccess(`PIN ${isReset ? 'reset' : 'created'} successfully! Logging you in...`);
       
       // 4. Fetch member data and finish
-      const [member] = await Promise.all([
-        getMemberByPhone(phone),
-        new Promise(resolve => setTimeout(resolve, 2000))
-      ]);
+      // We wait a moment for the Sheet update to potentially propagate or just for UX
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const member = await getMemberByPhone(phone);
 
       if (member) {
         onSuccess(member);
       } else {
-        setError('PIN created, but unable to auto-login. Please try logging in manually.');
+        setError('PIN updated, but unable to auto-login. Please try logging in manually.');
         setTimeout(onBack, 2000);
       }
 

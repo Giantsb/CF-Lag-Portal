@@ -13,13 +13,41 @@ function App() {
   const [isResetMode, setIsResetMode] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
 
-  // Check for persisted session via Firebase Auth
+  // Check for persisted session via Firebase Auth AND LocalStorage (Fallback)
   useEffect(() => {
+    // 1. Check LocalStorage (Fallback for when Firebase Password mismatch occurs due to reset)
+    const checkLocalSession = async () => {
+       const localSession = localStorage.getItem('hoa_session');
+       if (localSession) {
+          try {
+             const session = JSON.parse(localSession);
+             if (session.expiry > new Date().getTime()) {
+                const member = await getMemberByPhone(session.phone);
+                if (member) {
+                   setMemberData(member);
+                   setViewState(ViewState.DASHBOARD);
+                   setIsSessionLoading(false);
+                   return true;
+                }
+             } else {
+                localStorage.removeItem('hoa_session');
+             }
+          } catch (e) {
+             localStorage.removeItem('hoa_session');
+          }
+       }
+       return false;
+    };
+
+    // 2. Firebase Listener
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // If we already loaded from local storage, don't overwrite with null from Firebase init
+      const hasLocalSession = await checkLocalSession();
+      if (hasLocalSession) return;
+
       if (user && user.email) {
-        // User is signed in, fetch their member data
+        // User is signed in via Firebase
         try {
-          // Extract phone from synthetic email (phone@crossfitlagos.app)
           const phone = user.email.split('@')[0];
           const member = await getMemberByPhone(phone);
           
@@ -27,9 +55,7 @@ function App() {
             setMemberData(member);
             setViewState(ViewState.DASHBOARD);
           } else {
-            // User authenticated but not found in Sheet (rare edge case)
             console.error('User authenticated but not found in records');
-            // Optional: signOut(auth);
             setViewState(ViewState.LOGIN);
           }
         } catch (e) {
@@ -37,14 +63,14 @@ function App() {
           setViewState(ViewState.LOGIN);
         }
       } else {
-        // User is signed out
+        // User is signed out in Firebase, and we already checked LocalStorage above
+        // So we stay at Login
         setMemberData(null);
         setViewState(ViewState.LOGIN);
       }
       setIsSessionLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
@@ -68,6 +94,7 @@ function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      localStorage.removeItem('hoa_session'); // Clear fallback session
       setMemberData(null);
       setSetupPhone('');
       setIsResetMode(false);
@@ -82,6 +109,12 @@ function App() {
     setViewState(ViewState.DASHBOARD);
     setSetupPhone('');
     setIsResetMode(false);
+    
+    // Set fallback session just in case, since we can't update Firebase password easily
+    localStorage.setItem('hoa_session', JSON.stringify({
+       phone: member.phone.replace(/[\s\-\(\)]/g, ''),
+       expiry: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
+    }));
   };
 
   const handleSetupBack = () => {

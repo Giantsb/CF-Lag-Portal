@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { DumbbellIcon, EyeIcon, EyeOffIcon } from './Icons';
-import { verifyPhoneExists, getMemberByPhone } from '../services/membershipService';
+import { verifyPhoneExists, login as fallbackLogin } from '../services/membershipService';
 import { auth, signInWithEmailAndPassword, getEmailFromPhone, getPasswordFromPin, logAnalyticsEvent } from '../services/firebase';
+import { hashPin } from '../utils/encryption';
 import { MemberData } from '../types';
 
 interface LoginViewProps {
@@ -43,43 +44,51 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
       
       // Log analytics event
       logAnalyticsEvent('user_login_success', { method: 'firebase_auth' });
-
-      // 2. If successful, auth listener in App.tsx will handle the state change.
-      // We manually fetch just to confirm validity for UI feedback if needed, 
-      // but strictly speaking the listener handles the transition.
-      const member = await getMemberByPhone(phone);
-      if (member) {
-        if (rememberMe) {
-          // Firebase persistence handles this mostly, but if you have custom logic:
-          // localStorage.setItem('hoa_remember_phone', phone);
-        }
-        onLoginSuccess(member);
-      } else {
-        setError('Login successful, but member details not found.');
-      }
+      
+      // onAuthStateChanged in App.tsx will handle the rest.
 
     } catch (firebaseError: any) {
-      console.log("Firebase login failed, checking legacy/sheet:", firebaseError.code);
+      console.log("Firebase login failed, checking fallback:", firebaseError.code);
       
-      // Handle User Not Found - This implies they exist in Sheet but haven't setup Firebase Auth yet
-      if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/user-not-found') {
+      // 2. FALLBACK MECHANISM
+      // If Firebase fails (e.g. invalid-credential), it might be because:
+      // a) The user reset their PIN in the Sheet, but Firebase password is old.
+      // b) The user never set up Firebase (Legacy user).
+      
+      if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/user-not-found') {
         
-        // Check if user exists in the Sheet to determine if they need to Setup PIN (Register)
-        const verifyResult = await verifyPhoneExists(phone);
-        if (verifyResult.success) {
-          // User exists in Sheet, but not in Firebase -> Need to Setup/Register
-          // Or they entered the wrong PIN.
-          
-          // Since we can't verify the PIN against the Sheet without the legacy logic,
-          // and we want to move to Firebase, we will assume they need to Setup/Reset 
-          // if Firebase auth fails.
-          setError('Invalid PIN or Account not set up.');
-          
-          // Optional: You could auto-redirect to setup if you are sure they haven't registered
-          // onRequireSetup(phone); 
-        } else {
-          setError('Phone number not found in records.');
+        try {
+           // Hash pin locally for comparison/sending
+           const hashedPin = hashPin(pin, phone);
+           
+           // Verify against Google Sheet directly
+           const fallbackResult = await fallbackLogin(phone, hashedPin);
+           
+           if (fallbackResult.success && fallbackResult.member) {
+              // Login Success via Fallback!
+              // Since we can't update Firebase password easily here, we use localStorage persistence.
+              
+              localStorage.setItem('hoa_session', JSON.stringify({
+                 phone: phone,
+                 expiry: new Date().getTime() + (30 * 24 * 60 * 60 * 1000) // 30 days
+              }));
+              
+              logAnalyticsEvent('user_login_success', { method: 'fallback_sheet' });
+              onLoginSuccess(fallbackResult.member);
+              return; // Exit
+           } else if (fallbackResult.needsSetup) {
+              // PIN not set in sheet
+              onRequireSetup(phone);
+              setLoading(false);
+              return;
+           } else {
+              // Invalid PIN in sheet too
+               setError('Invalid PIN or Phone Number');
+           }
+        } catch (fallbackErr) {
+           setError('Login failed. Please check connection.');
         }
+
       } else {
         setError('Login failed: ' + (firebaseError.message || 'Unknown error'));
       }
