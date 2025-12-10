@@ -5,6 +5,8 @@ import { hashPin } from '../utils/encryption';
 import { 
   auth, 
   createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  updatePassword,
   getEmailFromPhone, 
   getPasswordFromPin,
   db,
@@ -48,50 +50,89 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
 
     try {
       // 1. Create/Sync with Google Sheet (Legacy/Admin Backend)
+      // This is the source of truth for the Fallback Mechanism.
       const hashedPin = hashPin(newPin, phone);
-      
-      // We pass 'true' to indicate we expect a response, though CORS might block reading it
-      // The backend script MUST allow overwriting for this to work as a reset.
       const sheetResult = await createPin(phone, hashedPin);
 
       if (!sheetResult.success) {
          throw new Error(sheetResult.message || 'Failed to update database');
       }
 
-      // 2. Register with Firebase Auth (Persistence Layer)
+      // 2. Update Firebase Auth (Persistence Layer)
       const email = getEmailFromPhone(phone);
       const password = getPasswordFromPin(newPin);
+      
+      let user = auth.currentUser;
+      let firebaseUpdated = false;
 
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+      // Case A: User is already logged in (e.g. valid session, just updating PIN)
+      if (user) {
+        try {
+          await updatePassword(user, password);
+          firebaseUpdated = true;
+          console.log('Firebase password updated for existing session');
+        } catch (e: any) {
+          console.warn('Failed to update password for active session:', e);
+          if (e.code === 'auth/requires-recent-login') {
+             // We can't re-auth without the old PIN, so we treat this as a "soft" failure
+             // and proceed to the Fallback.
+             console.warn('Re-authentication required but not possible. Falling back to Sheet.');
+          }
+        }
+      } 
+      // Case B: User is not logged in (Reset Flow or New User)
+      else {
+        try {
+          // Try to create new user
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          user = userCredential.user;
+          firebaseUpdated = true;
+          logAnalyticsEvent('new_member_registered', { method: 'pin_setup' });
+        } catch (authError: any) {
+          // If user already exists, this is a PIN RESET.
+          if (authError.code === 'auth/email-already-in-use') {
+             console.log('User exists, treating as PIN Reset/Update');
+             
+             // Attempt to sign in with the NEW PIN 
+             // This handles the case where the user is resetting to the SAME pin,
+             // or if an admin already reset it on the backend.
+             try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                user = userCredential.user;
+                firebaseUpdated = true;
+                console.log('Signed in with new PIN, Firebase is in sync');
+             } catch (signInErr) {
+                // CRITICAL: If this fails, it means the Old PIN is still active in Firebase.
+                // We CANNOT update the Firebase password without the Old PIN (which the user forgot).
+                // We proceed anyway, relying on the 'fallbackLogin' mechanism in LoginView
+                // which checks the Google Sheet (which we successfully updated in Step 1).
+                console.warn('Cannot sync Firebase password without old credentials. Relying on Fallback Login.');
+                logAnalyticsEvent('pin_reset_fallback_activated', { phone_hash: hashedPin });
+             }
+          } else {
+             throw authError;
+          }
+        }
+      }
 
-        // 3. Store marker in Firestore
-        await setDoc(doc(db, "users", user.uid), {
-           phone: phone,
-           registeredAt: new Date(),
-           profile: 'main'
-        });
-
-        // Log analytics event
-        logAnalyticsEvent('new_member_registered', { method: 'pin_setup' });
-
-      } catch (authError: any) {
-        // If user already exists (auth/email-already-in-use), this is a PIN RESET.
-        if (authError.code === 'auth/email-already-in-use') {
-           console.log('User exists, treating as PIN Reset/Update');
-           // We proceed because we successfully updated the Google Sheet in Step 1.
-           // The user will now have a mismatch between Firebase Password (old PIN) and Sheet PIN (new PIN).
-           // LoginView will handle this via Fallback Login.
-        } else {
-           throw authError;
+      // 3. Update Firestore Profile if we have a valid user object
+      if (user && firebaseUpdated) {
+        try {
+          await setDoc(doc(db, "users", user.uid), {
+            phone: phone,
+            registeredAt: new Date(),
+            profile: 'main',
+            lastPinUpdate: new Date()
+          }, { merge: true });
+        } catch (e) {
+          console.warn('Failed to update Firestore profile', e);
         }
       }
 
       setSuccess(`PIN ${isReset ? 'reset' : 'created'} successfully! Logging you in...`);
       
       // 4. Fetch member data and finish
-      // We wait a moment for the Sheet update to potentially propagate or just for UX
+      // We wait a moment for the Sheet update to potentially propagate
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       const member = await getMemberByPhone(phone);
