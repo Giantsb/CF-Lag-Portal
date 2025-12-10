@@ -380,92 +380,95 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
             {currentView === 'dashboard' ? (
               <>
-                 <header className="mb-8">
-                    <h2 className="text-2xl font-bold text-white">Welcome back, {member.firstName}</h2>
-                    <p className="text-gray-400">Here's an overview of your membership status.</p>
+                 <header className="mb-6">
+                    <h2 className="text-2xl font-bold text-white">Dashboard</h2>
+                    <p className="text-gray-400 text-sm">Welcome back, {member.firstName}</p>
                  </header>
 
-                 <div className={`rounded-2xl border ${borderColor} ${bgColor} p-6 lg:p-8 shadow-xl relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-brand-accent/10`}>
-                  
-                  {/* Status Badge */}
-                  <div className="flex justify-between items-start mb-8">
-                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-brand-black border border-white/10 flex items-center justify-center text-gray-400">
-                           <UserIcon className="w-8 h-8" />
+                 {/* Grid Layout for Cards */}
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* Card 1: Member Status */}
+                    <div className={`p-5 rounded-xl border ${borderColor} ${bgColor} relative overflow-hidden flex items-center gap-4 shadow-lg`}>
+                        <div className="relative z-10 w-14 h-14 rounded-full bg-brand-black border border-white/10 flex items-center justify-center text-gray-400 shrink-0">
+                           <UserIcon className="w-7 h-7" />
                         </div>
-                        <div>
-                           <h3 className="text-xl font-bold text-white">{member.firstName} {member.lastName}</h3>
-                           <div className={`flex items-center gap-2 mt-1 font-medium ${statusColor}`}>
+                        <div className="relative z-10">
+                           <h3 className="font-bold text-lg text-white leading-tight">{member.firstName} {member.lastName}</h3>
+                           <div className={`flex items-center gap-1.5 text-sm font-medium ${statusColor}`}>
                               {isValid ? <CheckCircleIcon className="w-4 h-4" /> : (isExpired ? <XCircleIcon className="w-4 h-4" /> : <ClockIcon className="w-4 h-4" />)}
                               <span>{member.status}</span>
                            </div>
                         </div>
-                     </div>
-                  </div>
+                        <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-10 ${isValid ? 'bg-green-500' : 'bg-red-500'} blur-xl`}></div>
+                    </div>
 
-                  {/* Progress Bar */}
-                  <div className="mb-8 bg-black/20 p-4 rounded-xl border border-white/5">
-                     <div className="flex justify-between text-xs text-gray-400 mb-2">
-                        <span>Start: {member.startDate}</span>
-                        <span>End: {member.expirationDate}</span>
-                     </div>
-                     <div className="h-4 w-full bg-gray-800 rounded-full overflow-hidden shadow-inner">
-                        <div 
-                           className={`h-full ${barColor} transition-all duration-1000 ease-out`}
-                           style={{ width: `${progressPercentage}%` }}
-                        />
-                     </div>
-                     <div className="mt-2 text-right">
-                        <span className={`text-xs font-bold ${isExpiringSoon ? 'text-yellow-400' : isExpired ? 'text-red-400' : 'text-brand-accent'}`}>
-                           {isExpired ? 'Expired' : `${diffDays} days left`}
-                        </span>
-                     </div>
-                  </div>
-
-                  {/* Grid Layout */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     
-                     {/* Plan Details */}
-                     <div className="bg-black/20 rounded-xl p-5 border border-white/5">
-                        <h4 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
-                           <ActivityIcon className="w-4 h-4" /> Plan Details
-                        </h4>
-                        <div className="space-y-3">
-                           <div className="flex justify-between border-b border-white/5 pb-2">
-                              <span className="text-gray-400">Package</span>
-                              <span className="font-medium text-brand-accent">{member.package}</span>
-                           </div>
-                           <div className="flex justify-between border-b border-white/5 pb-2">
-                              <span className="text-gray-400">Duration</span>
-                              <span className="font-medium text-white">{member.duration} {member.duration === '1' ? 'month' : 'months'}</span>
-                           </div>
-                           <div className="flex justify-between border-b border-white/5 pb-2">
-                              <span className="text-gray-400">Amount</span>
-                              <span className="font-medium text-white">{member.amount}</span>
-                           </div>
-                           <div className="flex justify-between">
-                              <span className="text-gray-400">Paused Days</span>
-                              <span className="font-medium text-white flex items-center gap-2">
-                                 <ClockIcon className="w-3 h-3 text-orange-400" />
-                                 {member.pauseDays} days
-                              </span>
-                           </div>
+                    {/* Card 2: Subscription Timeline */}
+                    <div className="p-5 rounded-xl border border-white/10 bg-brand-dark shadow-lg flex flex-col justify-center">
+                        <div className="flex justify-between items-end mb-2">
+                            <span className="text-gray-400 text-xs font-bold uppercase tracking-wider">Subscription Expires</span>
+                            <span className={`text-xl font-bold ${isExpiringSoon ? 'text-yellow-500' : isExpired ? 'text-red-500' : 'text-brand-accent'}`}>
+                                {isExpired ? 'Expired' : `${diffDays} Days`}
+                            </span>
                         </div>
-                     </div>
-
-                     {/* Contact & Misc */}
-                     <div className="bg-black/20 rounded-xl p-5 border border-white/5">
-                        <h4 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
-                           <PhoneIcon className="w-4 h-4" /> Account Info
-                        </h4>
-                        <div className="space-y-3">
-                           <div className="flex justify-between border-b border-white/5 pb-2">
-                              <span className="text-gray-400">Phone</span>
-                              <span className="font-medium text-white">{member.phone}</span>
-                           </div>
+                        <div className="w-full bg-black/40 rounded-full h-2.5 mb-2 overflow-hidden border border-white/5">
+                            <div className={`h-full ${barColor} transition-all duration-1000`} style={{ width: `${progressPercentage}%` }}></div>
                         </div>
-                     </div>
-                  </div>
+                        <div className="flex justify-between text-xs text-gray-500 font-mono">
+                            <span>{member.startDate}</span>
+                            <span>{member.expirationDate}</span>
+                        </div>
+                    </div>
+
+                    {/* Card 3: Plan Details */}
+                    <div className="p-5 rounded-xl border border-white/10 bg-brand-dark shadow-lg">
+                        <div className="flex items-center gap-2 mb-4 text-brand-accent">
+                            <ActivityIcon className="w-5 h-5" />
+                            <h4 className="font-bold text-white text-sm uppercase tracking-wider">Plan Details</h4>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
+                                <span className="text-gray-400">Package</span>
+                                <span className="font-medium text-white">{member.package}</span>
+                            </div>
+                            <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
+                                <span className="text-gray-400">Duration</span>
+                                <span className="font-medium text-white">{member.duration} Month{member.duration !== '1' && 's'}</span>
+                            </div>
+                            <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
+                                <span className="text-gray-400">Amount</span>
+                                <span className="font-medium text-white">{member.amount}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Card 4: Account Info */}
+                    <div className="p-5 rounded-xl border border-white/10 bg-brand-dark shadow-lg">
+                        <div className="flex items-center gap-2 mb-4 text-gray-400">
+                            <UserIcon className="w-5 h-5" />
+                            <h4 className="font-bold text-white text-sm uppercase tracking-wider">Account Info</h4>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
+                                <span className="text-gray-400">Phone</span>
+                                <span className="font-medium text-white font-mono">{member.phone}</span>
+                            </div>
+                            <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
+                                <span className="text-gray-400">Paused Days</span>
+                                <span className="font-medium text-orange-400 flex items-center gap-1.5">
+                                    <ClockIcon className="w-3.5 h-3.5" /> 
+                                    {member.pauseDays}
+                                </span>
+                            </div>
+                            {member.email && (
+                                <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
+                                    <span className="text-gray-400">Email</span>
+                                    <span className="font-medium text-white truncate max-w-[150px]">{member.email}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                  </div>
               </>
             ) : (
@@ -473,7 +476,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                   {/* Schedule View */}
                   <header className="mb-6">
                     <h2 className="text-2xl font-bold text-white">Class Schedule</h2>
-                    <p className="text-gray-400">Find your next session.</p>
+                    <p className="text-gray-400 text-sm">Find your next session.</p>
                   </header>
 
                   {/* Holiday API Error Warning */}
@@ -514,7 +517,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                   </div>
 
                   {/* Weekly Timetable */}
-                  <div className="bg-brand-dark border border-white/10 rounded-xl overflow-hidden mb-6 transition-all duration-300">
+                  <div className="bg-brand-dark border border-white/10 rounded-xl overflow-hidden mb-6 transition-all duration-300 shadow-lg">
                      <button 
                         onClick={() => setIsTimetableExpanded(!isTimetableExpanded)}
                         className="w-full p-4 bg-black/20 border-b border-white/10 flex justify-between items-center hover:bg-white/5 transition-colors"
@@ -570,7 +573,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                   </div>
 
                   {/* Public Holidays */}
-                  <div className="bg-brand-dark border border-white/10 rounded-xl overflow-hidden mb-6">
+                  <div className="bg-brand-dark border border-white/10 rounded-xl overflow-hidden mb-6 shadow-lg">
                      <div className="p-4 bg-black/20 border-b border-white/10">
                         <h3 className="font-bold flex items-center gap-2 text-orange-400">
                            <ActivityIcon className="w-5 h-5" />
@@ -590,7 +593,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                   </div>
 
                   {/* Holiday Closures */}
-                  <div className="bg-brand-dark border border-white/10 rounded-xl overflow-hidden">
+                  <div className="bg-brand-dark border border-white/10 rounded-xl overflow-hidden shadow-lg">
                      <div className="p-4 bg-black/20 border-b border-white/10">
                         <h3 className="font-bold flex items-center gap-2 text-red-400">
                            <XCircleIcon className="w-5 h-5" />
