@@ -4,18 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CrossFit Lagos | Membership Portal</title>
-  
-  <link rel="icon" type="image/png" sizes="190x190" href="/cfl-icon-190.png">
+
+  <!-- Favicon for desktop browsers -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+
+  <!-- iOS home screen icon -->
   <link rel="apple-touch-icon" sizes="180x180" href="/cfl-icon-180.png">
+
+  <!-- Android and PWA icons -->
+  <link rel="icon" type="image/png" sizes="190x190" href="/cfl-icon-190.png">
   <link rel="icon" type="image/png" sizes="500x500" href="/cfl-icon-500.png">
+
+  <!-- Manifest for PWA -->
   <link rel="manifest" href="/metadata.json">
+
+  <!-- Theme color for browsers -->
   <meta name="theme-color" content="#FF0000">
-  
-  <!-- iOS Standalone App Capabilities -->
+
+  <!-- iOS PWA capabilities -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="CrossFit Lagos">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  
+
   <!-- Tailwind Configuration -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -36,26 +46,30 @@
       }
     }
   </script>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "crypto-js": "https://esm.sh/crypto-js@4.2.0",
-    "firebase/app": "https://esm.sh/firebase@10.8.0/app?deps=firebase@10.8.0",
-    "firebase/messaging": "https://esm.sh/firebase@10.8.0/messaging?deps=firebase@10.8.0",
-    "firebase/auth": "https://esm.sh/firebase@10.8.0/auth?deps=firebase@10.8.0",
-    "firebase/firestore": "https://esm.sh/firebase@10.8.0/firestore?deps=firebase@10.8.0",
-    "firebase/analytics": "https://esm.sh/firebase@10.8.0/analytics?deps=firebase@10.8.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+
+  <!-- Import maps for modules -->
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18.2.0",
+      "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+      "crypto-js": "https://esm.sh/crypto-js@4.2.0",
+      "firebase/app": "https://esm.sh/firebase@10.8.0/app?deps=firebase@10.8.0",
+      "firebase/messaging": "https://esm.sh/firebase@10.8.0/messaging?deps=firebase@10.8.0",
+      "firebase/auth": "https://esm.sh/firebase@10.8.0/auth?deps=firebase@10.8.0",
+      "firebase/firestore": "https://esm.sh/firebase@10.8.0/firestore?deps=firebase@10.8.0",
+      "firebase/analytics": "https://esm.sh/firebase@10.8.0/analytics?deps=firebase@10.8.0",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+      "react/": "https://aistudiocdn.com/react@^19.2.1/",
+      "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+    }
   }
-}
-</script>
+  </script>
 </head>
+
 <body class="bg-brand-black text-white overscroll-none">
   <div id="root"></div>
+
   <script type="module" src="/index.tsx"></script>
 </body>
 </html>
