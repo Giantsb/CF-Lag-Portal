@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LoginView from './components/LoginView';
 import PinSetupView from './components/PinSetupView';
 import DashboardView from './components/DashboardView';
+import InstallPrompt from './components/InstallPrompt';
 import { ViewState, MemberData } from './types';
 import { getMemberByPhone } from './services/membershipService';
 import { auth, onAuthStateChanged, signOut } from './services/firebase';
@@ -139,35 +140,36 @@ function App() {
     );
   }
 
-  switch (viewState) {
-    case ViewState.LOGIN:
-      return (
+  return (
+    <>
+      {viewState === ViewState.LOGIN && (
         <LoginView 
           onLoginSuccess={handleLoginSuccess} 
           onRequireSetup={handleRequireSetup}
           onForgotPassword={handleForgotPassword}
         />
-      );
-    case ViewState.SETUP_PIN:
-      return (
+      )}
+      
+      {viewState === ViewState.SETUP_PIN && (
         <PinSetupView 
           phone={setupPhone}
           onSuccess={handleSetupSuccess}
           onBack={handleSetupBack}
           isReset={isResetMode}
         />
-      );
-    case ViewState.DASHBOARD:
-      if (!memberData) return null;
-      return (
+      )}
+      
+      {viewState === ViewState.DASHBOARD && memberData && (
         <DashboardView 
           member={memberData} 
           onLogout={handleLogout} 
         />
-      );
-    default:
-      return <div>Unknown Error</div>;
-  }
+      )}
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
+    </>
+  );
 }
 
 export default App;
