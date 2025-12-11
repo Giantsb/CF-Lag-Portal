@@ -98,7 +98,16 @@ export const logAnalyticsEvent = (eventName: string, params?: any) => {
 
 // Messaging Wrappers
 export const requestForToken = async () => {
-  if (!messaging) return null;
+  if (!messaging) {
+    console.log('Firebase Messaging is not initialized or supported in this browser.');
+    return null;
+  }
+
+  if (!VAPID_KEY) {
+    console.error('VAPID_KEY is missing from environment variables. Cannot request token.');
+    return null;
+  }
+
   try {
     // Check if notification permission is granted
     if (Notification.permission !== 'granted') {
@@ -113,6 +122,11 @@ export const requestForToken = async () => {
     // This is crucial for iOS PWA to properly associate the token
     const registration = await navigator.serviceWorker.ready;
 
+    if (!registration) {
+      console.error('No active service worker found. Cannot request token.');
+      return null;
+    }
+
     const currentToken = await getToken(messaging, { 
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: registration 
@@ -126,7 +140,7 @@ export const requestForToken = async () => {
       return null;
     }
   } catch (err) {
-    console.log('An error occurred while retrieving token. ', err);
+    console.error('An error occurred while retrieving token:', err);
     return null;
   }
 };
