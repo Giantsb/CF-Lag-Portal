@@ -1,21 +1,21 @@
 {
   "name": "CrossFit Lagos Portal",
-  "short_name": "CrossFit Lagos",
+  "short_name": "CFit Lagos",
   "icons": [
     {
-      "src": "brand-cons/cfl-icon-180.png",
+      "src": "/cfl-icon-180.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "brand-icons/cfl-icon-190.png",
+      "src": "/cfl-icon-190.png",
       "sizes": "190x190",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "brand-icons/cfl-icon-500.png",
+      "src": "/cfl-icon-500.png",
       "sizes": "500x500",
       "type": "image/png",
       "purpose": "any maskable"
