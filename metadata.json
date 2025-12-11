@@ -3,17 +3,17 @@
   "short_name": "CrossFit Lagos",
   "icons": [
     {
-      "src": "/cfl-icon-180.png",
+      "src": "https://cflagos-icons.netlify.app/cfl-icon-180.png",
       "sizes": "180x180",
       "type": "image/png"
     },
     {
-      "src": "/cfl-icon-190.png",
+      "src": "https://cflagos-icons.netlify.app/cfl-icon-190.png",
       "sizes": "190x190",
       "type": "image/png"
     },
     {
-      "src": "/cfl-icon-500.png",
+      "src": "https://cflagos-icons.netlify.app/cfl-icon-500.png",
       "sizes": "500x500",
       "type": "image/png"
     }
