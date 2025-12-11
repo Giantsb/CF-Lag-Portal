@@ -15,6 +15,7 @@ import {
   logAnalyticsEvent
 } from '../services/firebase';
 import { MemberData } from '../types';
+import ThemeToggle from './ThemeToggle';
 
 interface PinSetupViewProps {
   phone: string;
@@ -50,7 +51,6 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
 
     try {
       // 1. Create/Sync with Google Sheet (Legacy/Admin Backend)
-      // This is the source of truth for the Fallback Mechanism.
       const hashedPin = hashPin(newPin, phone);
       const sheetResult = await createPin(phone, hashedPin);
 
@@ -65,7 +65,6 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
       let user = auth.currentUser;
       let firebaseUpdated = false;
 
-      // Case A: User is already logged in (e.g. valid session, just updating PIN)
       if (user) {
         try {
           await updatePassword(user, password);
@@ -74,38 +73,25 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
         } catch (e: any) {
           console.warn('Failed to update password for active session:', e);
           if (e.code === 'auth/requires-recent-login') {
-             // We can't re-auth without the old PIN, so we treat this as a "soft" failure
-             // and proceed to the Fallback.
              console.warn('Re-authentication required but not possible. Falling back to Sheet.');
           }
         }
       } 
-      // Case B: User is not logged in (Reset Flow or New User)
       else {
         try {
-          // Try to create new user
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           user = userCredential.user;
           firebaseUpdated = true;
           logAnalyticsEvent('new_member_registered', { method: 'pin_setup' });
         } catch (authError: any) {
-          // If user already exists, this is a PIN RESET.
           if (authError.code === 'auth/email-already-in-use') {
              console.log('User exists, treating as PIN Reset/Update');
-             
-             // Attempt to sign in with the NEW PIN 
-             // This handles the case where the user is resetting to the SAME pin,
-             // or if an admin already reset it on the backend.
              try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 user = userCredential.user;
                 firebaseUpdated = true;
                 console.log('Signed in with new PIN, Firebase is in sync');
              } catch (signInErr) {
-                // CRITICAL: If this fails, it means the Old PIN is still active in Firebase.
-                // We CANNOT update the Firebase password without the Old PIN (which the user forgot).
-                // We proceed anyway, relying on the 'fallbackLogin' mechanism in LoginView
-                // which checks the Google Sheet (which we successfully updated in Step 1).
                 console.warn('Cannot sync Firebase password without old credentials. Relying on Fallback Login.');
                 logAnalyticsEvent('pin_reset_fallback_activated', { phone_hash: hashedPin });
              }
@@ -115,7 +101,7 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
         }
       }
 
-      // 3. Update Firestore Profile if we have a valid user object
+      // 3. Update Firestore Profile
       if (user && firebaseUpdated) {
         try {
           await setDoc(doc(db, "users", user.uid), {
@@ -131,8 +117,6 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
 
       setSuccess(`PIN ${isReset ? 'reset' : 'created'} successfully! Logging you in...`);
       
-      // 4. Fetch member data and finish
-      // We wait a moment for the Sheet update to potentially propagate
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       const member = await getMemberByPhone(phone);
@@ -153,16 +137,20 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
   };
 
   return (
-    <div className="min-h-screen bg-brand-black flex items-center justify-center p-4">
-      <div className="bg-brand-dark rounded-lg shadow-xl p-8 w-full max-w-md border border-brand-accent/20">
+    <div className="min-h-screen bg-brand-black flex items-center justify-center p-4 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
+      <div className="bg-brand-dark rounded-lg shadow-xl p-8 w-full max-w-md border border-brand-border">
         <div className="text-center mb-8">
           <div className="inline-block p-3 bg-brand-accent/10 rounded-full mb-4 text-brand-accent">
             <LockIcon />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">
+          <h1 className="text-2xl font-bold text-brand-textPrimary mb-2">
             {isReset ? 'Reset Your PIN' : 'Setup Your PIN'}
           </h1>
-          <p className="text-gray-400">
+          <p className="text-brand-textSecondary">
             {isReset ? 'Create a new 4-digit PIN for your account' : 'Create a 4-digit PIN for your account'}
           </p>
           <p className="text-sm text-brand-accent mt-2">Phone: {phone}</p>
@@ -170,7 +158,7 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-brand-textSecondary mb-2">
               New PIN (4 digits)
             </label>
             <div className="relative">
@@ -180,12 +168,12 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
                 onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 placeholder="••••"
                 maxLength={4}
-                className="w-full px-4 py-3 bg-brand-black border border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none pr-12 text-white transition-all"
+                className="w-full px-4 py-3 bg-brand-input border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none pr-12 text-brand-textPrimary transition-all placeholder-brand-textSecondary/50"
               />
               <button
                 type="button"
                 onClick={() => setShowNewPin(!showNewPin)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-accent"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-textSecondary hover:text-brand-accent"
               >
                 {showNewPin ? <EyeOffIcon /> : <EyeIcon />}
               </button>
@@ -193,7 +181,7 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-brand-textSecondary mb-2">
               Confirm PIN
             </label>
             <div className="relative">
@@ -203,12 +191,12 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
                 onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 placeholder="••••"
                 maxLength={4}
-                className="w-full px-4 py-3 bg-brand-black border border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none pr-12 text-white transition-all"
+                className="w-full px-4 py-3 bg-brand-input border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none pr-12 text-brand-textPrimary transition-all placeholder-brand-textSecondary/50"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPin(!showConfirmPin)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-accent"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-textSecondary hover:text-brand-accent"
               >
                 {showConfirmPin ? <EyeOffIcon /> : <EyeIcon />}
               </button>
@@ -230,14 +218,14 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
           <button
             onClick={handleSetupPin}
             disabled={loading}
-            className="w-full bg-brand-accent text-brand-black py-3 rounded-lg font-bold hover:bg-brand-accentHover transition disabled:bg-gray-600 disabled:cursor-not-allowed"
+            className="w-full bg-brand-accent text-brand-accentText py-3 rounded-lg font-bold hover:bg-brand-accentHover transition disabled:bg-gray-600 disabled:cursor-not-allowed"
           >
             {loading ? (isReset ? 'Resetting...' : 'Setting up...') : (isReset ? 'Reset PIN' : 'Setup PIN')}
           </button>
 
           <button
             onClick={onBack}
-            className="w-full bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 transition"
+            className="w-full bg-brand-surface text-brand-textPrimary py-3 rounded-lg font-semibold hover:bg-opacity-80 transition"
           >
             Back to Login
           </button>

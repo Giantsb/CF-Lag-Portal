@@ -26,20 +26,64 @@
   <meta name="apple-mobile-web-app-title" content="CrossFit Lagos">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+  <style>
+    :root {
+      /* Dark Theme (Default) */
+      --bg-primary: #0f172a;      /* slate-900 */
+      --bg-secondary: #1e293b;    /* slate-800 */
+      --text-primary: #f8fafc;    /* slate-50 */
+      --text-secondary: #94a3b8;  /* slate-400 */
+      --accent: #bef264;          /* lime-300 */
+      --accent-hover: #a3e635;    /* lime-400 */
+      --accent-text: #0f172a;     /* dark text on light accent */
+      --border-color: rgba(255, 255, 255, 0.1);
+      --surface-highlight: rgba(255, 255, 255, 0.05);
+      --input-bg: #0f172a;
+      --card-header-bg: rgba(0, 0, 0, 0.2);
+    }
+
+    [data-theme='light'] {
+      /* Light Theme */
+      --bg-primary: #f1f5f9;      /* slate-100 */
+      --bg-secondary: #ffffff;    /* white */
+      --text-primary: #0f172a;    /* slate-900 */
+      --text-secondary: #64748b;  /* slate-500 */
+      --accent: #4d7c0f;          /* lime-700 (darker for visibility on light bg) */
+      --accent-hover: #3f6212;    /* lime-800 */
+      --accent-text: #ffffff;     /* white text on dark accent */
+      --border-color: #e2e8f0;    /* slate-200 */
+      --surface-highlight: #f8fafc; /* slate-50 */
+      --input-bg: #ffffff;
+      --card-header-bg: #f1f5f9;
+    }
+    
+    body {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+  </style>
+
   <!-- Tailwind Configuration -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: ['class', '[data-theme="dark"]'],
       theme: {
         extend: {
           colors: {
             brand: {
-              black: '#0f172a',
-              dark: '#1e293b',
-              accent: '#bef264',
-              accentHover: '#a3e635',
+              black: 'var(--bg-primary)',
+              dark: 'var(--bg-secondary)',
+              accent: 'var(--accent)',
+              accentHover: 'var(--accent-hover)',
+              accentText: 'var(--accent-text)',
               danger: '#ef4444',
-              success: '#22c55e'
+              success: '#22c55e',
+              textPrimary: 'var(--text-primary)',
+              textSecondary: 'var(--text-secondary)',
+              border: 'var(--border-color)',
+              surface: 'var(--surface-highlight)',
+              input: 'var(--input-bg)',
+              header: 'var(--card-header-bg)'
             }
           }
         }
@@ -67,7 +111,7 @@
   </script>
 </head>
 
-<body class="bg-brand-black text-white overscroll-none">
+<body class="bg-brand-black text-brand-textPrimary overscroll-none">
   <div id="root"></div>
 
   <script type="module" src="/index.tsx"></script>

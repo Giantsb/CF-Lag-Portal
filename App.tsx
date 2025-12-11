@@ -13,6 +13,14 @@ function App() {
   const [isResetMode, setIsResetMode] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
 
+  // Initialize Theme
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }, []);
+
   // Check for persisted session via Firebase Auth AND LocalStorage (Fallback)
   useEffect(() => {
     // 1. Check LocalStorage (Fallback for when Firebase Password mismatch occurs due to reset)

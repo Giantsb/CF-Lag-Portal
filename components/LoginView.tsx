@@ -4,6 +4,7 @@ import { verifyPhoneExists, login as fallbackLogin } from '../services/membershi
 import { auth, signInWithEmailAndPassword, getEmailFromPhone, getPasswordFromPin, logAnalyticsEvent } from '../services/firebase';
 import { hashPin } from '../utils/encryption';
 import { MemberData } from '../types';
+import ThemeToggle from './ThemeToggle';
 
 interface LoginViewProps {
   onLoginSuccess: (member: MemberData) => void;
@@ -51,10 +52,6 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
       console.log("Firebase login failed, checking fallback:", firebaseError.code);
       
       // 2. FALLBACK MECHANISM
-      // If Firebase fails (e.g. invalid-credential), it might be because:
-      // a) The user reset their PIN in the Sheet, but Firebase password is old.
-      // b) The user never set up Firebase (Legacy user).
-      
       if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/user-not-found') {
         
         try {
@@ -66,8 +63,6 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
            
            if (fallbackResult.success && fallbackResult.member) {
               // Login Success via Fallback!
-              // Since we can't update Firebase password easily here, we use localStorage persistence.
-              
               localStorage.setItem('hoa_session', JSON.stringify({
                  phone: phone,
                  expiry: new Date().getTime() + (30 * 24 * 60 * 60 * 1000) // 30 days
@@ -117,20 +112,24 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
   };
 
   return (
-    <div className="min-h-screen bg-brand-black flex items-center justify-center p-4">
-      <div className="bg-brand-dark rounded-lg shadow-xl p-8 w-full max-w-md border border-brand-accent/20">
+    <div className="min-h-screen bg-brand-black flex items-center justify-center p-4 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
+      <div className="bg-brand-dark rounded-lg shadow-xl p-8 w-full max-w-md border border-brand-border">
         <div className="text-center mb-8">
           <div className="inline-block p-4 bg-brand-accent/10 rounded-full mb-4 text-brand-accent">
             <DumbbellIcon />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">CrossFit Lagos</h1>
+          <h1 className="text-3xl font-bold text-brand-textPrimary mb-2">CrossFit Lagos</h1>
           <p className="text-brand-accent font-semibold mb-1">Membership Portal</p>
-          <p className="text-gray-400 text-sm">Login to view your subscription</p>
+          <p className="text-brand-textSecondary text-sm">Login to view your subscription</p>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-brand-textSecondary mb-2">
               Phone Number
             </label>
             <input
@@ -138,12 +137,12 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Enter Phone Number"
-              className="w-full px-4 py-3 bg-brand-black border border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none text-white transition-all"
+              className="w-full px-4 py-3 bg-brand-input border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none text-brand-textPrimary transition-all placeholder-brand-textSecondary/50"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-brand-textSecondary mb-2">
               4-Digit PIN
             </label>
             <div className="relative">
@@ -153,12 +152,12 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 placeholder="••••"
                 maxLength={4}
-                className="w-full px-4 py-3 bg-brand-black border border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none pr-12 text-white transition-all"
+                className="w-full px-4 py-3 bg-brand-input border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none pr-12 text-brand-textPrimary transition-all placeholder-brand-textSecondary/50"
               />
               <button
                 type="button"
                 onClick={() => setShowPin(!showPin)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-accent"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-textSecondary hover:text-brand-accent"
               >
                 {showPin ? <EyeOffIcon /> : <EyeIcon />}
               </button>
@@ -171,9 +170,9 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
                    type="checkbox" 
                    checked={rememberMe}
                    onChange={(e) => setRememberMe(e.target.checked)}
-                   className="h-4 w-4 rounded border-gray-700 bg-brand-black text-brand-accent focus:ring-brand-accent accent-brand-accent"
+                   className="h-4 w-4 rounded border-brand-border bg-brand-input text-brand-accent focus:ring-brand-accent accent-brand-accent"
                  />
-                 <label htmlFor="remember-me" className="ml-2 block text-xs text-gray-400 cursor-pointer">
+                 <label htmlFor="remember-me" className="ml-2 block text-xs text-brand-textSecondary cursor-pointer">
                    Remember me
                  </label>
               </div>
@@ -196,13 +195,13 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full bg-brand-accent text-brand-black py-3 rounded-lg font-bold hover:bg-brand-accentHover transition disabled:bg-gray-600 disabled:cursor-not-allowed"
+            className="w-full bg-brand-accent text-brand-accentText py-3 rounded-lg font-bold hover:bg-brand-accentHover transition disabled:bg-gray-600 disabled:cursor-not-allowed"
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </div>
 
-        <div className="mt-6 text-center text-sm text-gray-400">
+        <div className="mt-6 text-center text-sm text-brand-textSecondary">
           <p>Having trouble logging in?</p>
           <p className="mt-1">Contact CrossFit Lagos administration</p>
         </div>
