@@ -109,7 +109,15 @@ export const requestForToken = async () => {
       }
     }
 
-    const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
+    // Get the active service worker registration
+    // This is crucial for iOS PWA to properly associate the token
+    const registration = await navigator.serviceWorker.ready;
+
+    const currentToken = await getToken(messaging, { 
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration 
+    });
+
     if (currentToken) {
       console.log('FCM Token:', currentToken);
       return currentToken;
