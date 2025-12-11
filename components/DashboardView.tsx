@@ -20,8 +20,7 @@ import {
   BellIcon
 } from './Icons';
 import { MemberData } from '../types';
-import { requestForToken, onMessageListener, logAnalyticsEvent } from '../services/firebase';
-import { saveNotificationToken } from '../services/membershipService';
+import { requestForToken, onMessageListener, logAnalyticsEvent, checkNotificationSupport } from '../services/firebase';
 
 interface DashboardViewProps {
   member: MemberData;
@@ -182,16 +181,36 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   }, []);
 
   const handleEnableNotifications = async () => {
-    const token = await requestForToken();
+    // 1. Check support/status first
+    const support = checkNotificationSupport();
+    
+    // Check if browser supports it at all
+    if (!support.supported || !support.serviceWorkerSupported) {
+      alert("This browser does not support notifications.");
+      setIsSidebarOpen(false);
+      return;
+    }
+
+    // 2. iOS PWA Guidance
+    if (support.isIOS && !support.isStandalone) {
+      alert("To enable notifications on iPhone, please tap 'Share' then 'Add to Home Screen' first.");
+      setIsSidebarOpen(false);
+      return;
+    }
+
+    // 3. Request Token
+    const token = await requestForToken(member.phone);
+    
     if (token) {
-      // Save the token to the backend associated with this user
-      const result = await saveNotificationToken(member.phone, token);
-      if (result === undefined) {
-         // requestForToken handles errors, but let's confirm success
-         alert("Notifications enabled! You will now receive updates.");
-      }
+       // Token request saved internally by requestForToken if successful
+       alert("Notifications enabled! You will now receive updates.");
     } else {
-      alert("Unable to enable notifications. Please check your browser settings.");
+       // Fallback for denied permissions or other errors
+       if (Notification.permission === 'denied') {
+          alert("Notifications are blocked. Please reset your browser permissions.");
+       } else {
+          alert("Unable to enable notifications. Please ensure you have a stable connection and try again.");
+       }
     }
     setIsSidebarOpen(false);
   };
