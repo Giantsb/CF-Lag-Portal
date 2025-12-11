@@ -286,15 +286,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
         </div>
       )}
 
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 w-full bg-brand-dark z-50 px-4 py-3 flex justify-between items-center border-b border-brand-border">
+      {/* Mobile Header - Toggle button on the left */}
+      <div className="lg:hidden fixed top-0 w-full bg-brand-dark z-50 px-4 py-3 flex items-center gap-4 border-b border-brand-border">
+        <button onClick={toggleSidebar} className="text-brand-textPrimary p-1">
+          {isSidebarOpen ? <XIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
+        </button>
         <div className="flex items-center gap-2">
            <DumbbellIcon className="w-8 h-8 text-brand-accent" />
            <span className="font-bold text-lg text-brand-textPrimary">CrossFit Lagos</span>
         </div>
-        <button onClick={toggleSidebar} className="text-brand-textPrimary">
-          {isSidebarOpen ? <XIcon /> : <MenuIcon />}
-        </button>
       </div>
 
       {/* Sidebar Navigation */}
@@ -657,42 +657,45 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                     <span className="text-brand-textPrimary font-medium">Access Bank</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-brand-textSecondary">Account Name</span>
-                    <span className="text-brand-textPrimary font-medium">CrossFit Lagos Limited</span>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-brand-accent/20 flex items-center justify-between">
-                    <span className="text-brand-textSecondary text-sm">Account Number</span>
+                    <span className="text-brand-textSecondary">Account Number</span>
                     <div className="flex items-center gap-2">
-                       <span className="font-mono text-xl font-bold text-brand-textPrimary tracking-wider">0078409920</span>
-                       <button 
-                         onClick={handleCopy}
-                         className="p-1.5 hover:bg-brand-surface rounded-md transition-colors text-brand-accent"
-                         title="Copy Account Number"
-                       >
-                          {copied ? <CheckCircleIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
-                       </button>
+                      <span className="text-brand-textPrimary font-medium font-mono">0078409920</span>
+                      <button onClick={handleCopy} className="text-brand-accent hover:text-brand-accentHover focus:outline-none" title="Copy Account Number">
+                        {copied ? <CheckCircleIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
+                      </button>
                     </div>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-brand-textSecondary">Account Name</span>
+                    <span className="text-brand-textPrimary font-medium">CrossFit Lagos</span>
                   </div>
                 </div>
               </div>
 
-              <div className="text-center">
-                 <p className="text-brand-textSecondary text-sm mb-4">After payment, please send your receipt to us on WhatsApp.</p>
-                 <a 
-                   href="https://wa.me/2347059969059?text=Hello%2C%20I%20have%20made%20payment%20for%20my%20membership%20renewal.%20Here%20is%20the%20receipt."
-                   target="_blank"
-                   rel="noreferrer"
-                   className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3 px-6 rounded-lg transition-colors w-full justify-center"
-                 >
-                    <PhoneIcon className="w-5 h-5" />
-                    Send Receipt on WhatsApp
-                 </a>
+              <div className="bg-brand-surface p-4 rounded-xl text-sm text-brand-textSecondary">
+                <p className="mb-2">
+                  <span className="font-bold text-brand-textPrimary">Instructions:</span>
+                </p>
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li>Make a transfer of the exact amount for your chosen package.</li>
+                  <li>Take a screenshot of the transaction receipt.</li>
+                  <li>Send the receipt via WhatsApp to confirm activation.</li>
+                </ol>
               </div>
+
+              <a 
+                href="https://wa.me/2347059969059" 
+                target="_blank" 
+                rel="noreferrer"
+                className="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-center transition-colors flex items-center justify-center gap-2"
+              >
+                <PhoneIcon className="w-5 h-5" />
+                Send Receipt on WhatsApp
+              </a>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };
