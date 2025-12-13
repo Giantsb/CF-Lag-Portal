@@ -655,7 +655,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                 <div className="bg-brand-dark border border-brand-border rounded-xl shadow-lg overflow-hidden">
                    <div className="p-6">
-                      <h2 className="text-xl font-bold text-brand-textPrimary mb-4">CrossFit Gym Policies & Terms</h2>
+                      <h2 className="text-xl font-bold text-brand-textPrimary mb-4">CrossFit Lagos Gym Policies & Terms</h2>
                       <p className="text-brand-textSecondary mb-6 leading-relaxed">
                         By creating an account or registering a membership, you agree to the policies below. These terms ensure a safe, fair, and consistent training environment for all members.
                       </p>
@@ -689,8 +689,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                           <h4 className="font-bold text-brand-textPrimary mb-2 text-sm">Allowed Pause Duration</h4>
                           <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-4 text-sm">
-                            <li><strong className="text-brand-textPrimary">Monthly Plans:</strong> Up to 14 days</li>
-                            <li><strong className="text-brand-textPrimary">3- & 6-Month Plans:</strong> 14–20 days</li>
+                            <li><strong className="text-brand-textPrimary">Monthly Plans:</strong> Minimum 14 days</li>
+                            <li><strong className="text-brand-textPrimary">3 & 6 Month Plans:</strong> 14–20 days</li>
                             <li><strong className="text-brand-textPrimary">12-Month Plans:</strong> 14–25 days</li>
                           </ul>
                           <p className="text-brand-textSecondary text-xs italic mb-6">Note: Only one pause is allowed per membership cycle.</p>
