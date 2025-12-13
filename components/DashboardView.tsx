@@ -17,7 +17,8 @@ import {
   CalendarIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  BellIcon
+  BellIcon,
+  FileTextIcon
 } from './Icons';
 import { MemberData } from '../types';
 import { requestForToken, onMessageListener, logAnalyticsEvent, checkNotificationSupport } from '../services/firebase';
@@ -57,8 +58,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'schedule'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies'>('dashboard');
   const [isTimetableExpanded, setIsTimetableExpanded] = useState(true);
+  const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
   const [notification, setNotification] = useState({ title: '', body: '' });
   const [showNotification, setShowNotification] = useState(false);
   
@@ -116,8 +118,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
   // --- Track Portal View ---
   useEffect(() => {
-    logAnalyticsEvent('portal_view', { page: 'dashboard', status: member.status });
-  }, [member.status]);
+    logAnalyticsEvent('portal_view', { page: currentView, status: member.status });
+  }, [currentView, member.status]);
 
   // --- Fetch Holidays ---
   useEffect(() => {
@@ -336,6 +338,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             </button>
             
             <button 
+              onClick={() => { setCurrentView('policies'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'policies' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface hover:text-brand-textPrimary'}`}
+            >
+               <FileTextIcon className="w-5 h-5" />
+               Policies & Terms
+            </button>
+            
+            <button 
               onClick={handleEnableNotifications}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface hover:text-brand-textPrimary transition-colors"
             >
@@ -394,7 +404,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                </div>
             )}
 
-            {currentView === 'dashboard' ? (
+            {currentView === 'dashboard' && (
               <>
                  <header className="mb-6">
                     <h2 className="text-2xl font-bold text-brand-textPrimary">Dashboard</h2>
@@ -487,7 +497,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                  </div>
               </>
-            ) : (
+            )}
+            
+            {currentView === 'schedule' && (
                <>
                   {/* Schedule View */}
                   <header className="mb-6">
@@ -632,6 +644,156 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                      </div>
                   </div>
                </>
+            )}
+
+            {currentView === 'policies' && (
+              <>
+                <header className="mb-6">
+                   <h2 className="text-2xl font-bold text-brand-textPrimary">Gym Policies</h2>
+                   <p className="text-brand-textSecondary text-sm">Review our terms of service.</p>
+                </header>
+
+                <div className="bg-brand-dark border border-brand-border rounded-xl shadow-lg overflow-hidden">
+                   <div className="p-6">
+                      <h2 className="text-xl font-bold text-brand-textPrimary mb-4">CrossFit Gym Policies & Terms</h2>
+                      <p className="text-brand-textSecondary mb-6 leading-relaxed">
+                        By creating an account or registering a membership, you agree to the policies below. These terms ensure a safe, fair, and consistent training environment for all members.
+                      </p>
+
+                      <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isPoliciesExpanded ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                          <hr className="border-brand-border my-6 opacity-50" />
+
+                          <h3 className="text-lg font-bold text-brand-accent mb-3 flex items-center gap-2">
+                             1. Membership Overview
+                          </h3>
+                          <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-6 text-sm">
+                            <li>All memberships are <strong className="text-brand-textPrimary">time-based</strong>, not attendance-based.</li>
+                            <li>Membership becomes active on the selected start date.</li>
+                            <li>Missed sessions or unused days cannot be refunded, rolled over, or extended.</li>
+                          </ul>
+
+                          <hr className="border-brand-border my-6 opacity-50" />
+
+                          <h3 className="text-lg font-bold text-brand-accent mb-3">
+                             2. Membership Freeze (Pause) Policy
+                          </h3>
+                          <p className="text-brand-textSecondary mb-4 text-sm">Members may request to pause their membership due to travel, injury, or personal reasons.</p>
+
+                          <h4 className="font-bold text-brand-textPrimary mb-2 text-sm">Eligibility & Conditions</h4>
+                          <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-4 text-sm">
+                            <li>Freeze requests must be submitted <strong className="text-brand-textPrimary">before</strong> the planned break.</li>
+                            <li>Only <strong className="text-brand-textPrimary">active memberships</strong> may be paused.</li>
+                            <li>Approved pauses extend the membership by the same number of days.</li>
+                            <li>Freeze requests will <strong className="text-brand-textPrimary">not</strong> be granted if submitted within <strong className="text-brand-textPrimary">7 days</strong> of the membership’s expiration or renewal date.</li>
+                          </ul>
+
+                          <h4 className="font-bold text-brand-textPrimary mb-2 text-sm">Allowed Pause Duration</h4>
+                          <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-4 text-sm">
+                            <li><strong className="text-brand-textPrimary">Monthly Plans:</strong> Up to 14 days</li>
+                            <li><strong className="text-brand-textPrimary">3- & 6-Month Plans:</strong> 14–20 days</li>
+                            <li><strong className="text-brand-textPrimary">12-Month Plans:</strong> 14–25 days</li>
+                          </ul>
+                          <p className="text-brand-textSecondary text-xs italic mb-6">Note: Only one pause is allowed per membership cycle.</p>
+
+                          <hr className="border-brand-border my-6 opacity-50" />
+
+                          <h3 className="text-lg font-bold text-brand-accent mb-3">
+                             3. Refund Policy
+                          </h3>
+                          <p className="text-brand-textSecondary mb-4 text-sm">The gym maintains a strict no-refund policy. No refunds will be issued for:</p>
+                          <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-4 text-sm">
+                            <li>Unused days</li>
+                            <li>Missed sessions</li>
+                            <li>Early cancellation</li>
+                            <li>Changes in schedule or loss of interest</li>
+                          </ul>
+
+                          <h4 className="font-bold text-brand-textPrimary mb-2 text-sm">Exceptions (Management Review Only)</h4>
+                          <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-4 text-sm">
+                            <li>Documented long-term medical conditions</li>
+                            <li>Instances where the gym is unable to provide the contracted service</li>
+                          </ul>
+                          <p className="text-brand-textSecondary text-sm mb-6">If approved, refunds may be prorated.</p>
+
+                          <hr className="border-brand-border my-6 opacity-50" />
+
+                          <h3 className="text-lg font-bold text-brand-accent mb-3">
+                             4. Non-Transferable Memberships
+                          </h3>
+                          <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-6 text-sm">
+                            <li>All memberships are personal and cannot be transferred or shared.</li>
+                          </ul>
+
+                          <hr className="border-brand-border my-6 opacity-50" />
+
+                          <h3 className="text-lg font-bold text-brand-accent mb-3">
+                             5. Health & Safety Requirements
+                          </h3>
+                          <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-6 text-sm">
+                            <li>Members must disclose injuries or medical conditions.</li>
+                            <li>Follow coaching instructions and train within your limits.</li>
+                            <li>Use equipment safely and responsibly.</li>
+                            <li>Wear suitable athletic attire and shoes.</li>
+                          </ul>
+
+                          <hr className="border-brand-border my-6 opacity-50" />
+
+                          <h3 className="text-lg font-bold text-brand-accent mb-3">
+                             6. Class Etiquette & Conduct
+                          </h3>
+                          <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-6 text-sm">
+                            <li>Arrive on time for classes.</li>
+                            <li>Respect coaches and fellow members.</li>
+                            <li>Clean and return equipment after use.</li>
+                            <li>Unsafe or disruptive behavior may lead to membership termination without refund.</li>
+                          </ul>
+
+                          <hr className="border-brand-border my-6 opacity-50" />
+
+                          <h3 className="text-lg font-bold text-brand-accent mb-3">
+                             7. Photography & Media
+                          </h3>
+                          <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-6 text-sm">
+                            <li>The gym may capture photos/videos during classes for community or promotional purposes.</li>
+                            <li>Members may request exemption by notifying management in writing.</li>
+                          </ul>
+
+                          <hr className="border-brand-border my-6 opacity-50" />
+
+                          <h3 className="text-lg font-bold text-brand-accent mb-3">
+                             8. Liability Waiver
+                          </h3>
+                          <ul className="list-disc pl-5 space-y-2 text-brand-textSecondary mb-6 text-sm">
+                            <li>You acknowledge that CrossFit training involves physical risk.</li>
+                            <li>You participate voluntarily and assume responsibility for your own safety.</li>
+                            <li>The gym is not liable for injuries caused by improper form, ignored instructions, or unsafe behavior.</li>
+                          </ul>
+
+                          <hr className="border-brand-border my-6 opacity-50" />
+
+                          <h3 className="text-lg font-bold text-brand-accent mb-3">
+                             9. Agreement
+                          </h3>
+                          <p className="text-brand-textSecondary mb-6 text-sm">By registering or using the gym facilities, you confirm that you have read and agree to these terms.</p>
+                      </div>
+
+                      <button 
+                         onClick={() => setIsPoliciesExpanded(!isPoliciesExpanded)}
+                         className="w-full mt-2 py-3 bg-brand-surface hover:bg-brand-surface/80 text-brand-accent font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                         {isPoliciesExpanded ? (
+                           <>
+                             Show Less <ChevronUpIcon className="w-5 h-5" />
+                           </>
+                         ) : (
+                           <>
+                             Read Full Policies <ChevronDownIcon className="w-5 h-5" />
+                           </>
+                         )}
+                      </button>
+                   </div>
+                </div>
+              </>
             )}
 
          </div>
