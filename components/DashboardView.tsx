@@ -211,10 +211,30 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
     
     let times = SCHEDULE[dayName] || [];
     let isHoliday = false;
+    let isClosed = false;
 
     if (holidayName) {
-      isHoliday = true;
-      times = HOLIDAY_TIMES;
+      const lowerName = holidayName.toLowerCase();
+      const isObservance = lowerName.includes('observance');
+      const isClosedHoliday = lowerName.includes('christmas day') || 
+                              lowerName.includes('boxing day') || 
+                              lowerName.includes("new year's day") || 
+                              lowerName.includes('easter sunday');
+
+      if (isObservance) {
+        // Observance: Regular schedule, treat as normal day
+        isHoliday = false;
+        // times remains as default SCHEDULE[dayName]
+      } else if (isClosedHoliday) {
+        // Gym Closed
+        isHoliday = true;
+        isClosed = true;
+        times = [];
+      } else {
+        // Public Holiday Open: Special holiday hours
+        isHoliday = true;
+        times = HOLIDAY_TIMES;
+      }
     }
 
     return {
@@ -223,7 +243,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
       dayName,
       times,
       isHoliday,
-      holidayName,
+      isClosed,
+      holidayName: isHoliday ? holidayName : undefined, // Only pass name if treated as holiday/closed
       hasClasses: times.length > 0
     };
   };
@@ -253,7 +274,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
         }
       }
     }
-    return { holidayName: holidays[format(now, 'yyyy-MM-dd')] };
+    // Return today's holiday info if no classes found (e.g., closed)
+    const todayInfo = getDailyInfo(now);
+    return { holidayName: todayInfo.holidayName };
   };
 
   const nextClassInfo = getNextClass();
@@ -367,7 +390,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                 
                 <div className="flex flex-col gap-1 w-full">
                   {info.isHoliday && (
-                    <div className="w-full h-1.5 rounded-full bg-red-500" title={info.holidayName} />
+                    <div className={`w-full h-1.5 rounded-full ${info.isClosed ? 'bg-red-600' : 'bg-orange-500'}`} title={info.holidayName} />
                   )}
                   {info.hasClasses && !info.isHoliday && (
                     <div className="flex flex-wrap gap-1">
@@ -380,8 +403,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                 </div>
                 
                 {info.isHoliday && (
-                   <span className="hidden md:block text-[10px] text-red-400 mt-1 truncate w-full text-left font-medium">
-                      {info.holidayName}
+                   <span className={`hidden md:block text-[10px] mt-1 truncate w-full text-left font-medium ${info.isClosed ? 'text-red-500 font-bold' : 'text-orange-400'}`}>
+                      {info.isClosed ? 'Closed: ' : ''}{info.holidayName}
                    </span>
                 )}
               </button>
@@ -416,8 +439,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                 <div className="flex flex-col gap-2 flex-1">
                   {info.isHoliday ? (
-                    <div className="p-2 rounded bg-red-500/10 border border-red-500/20 text-center">
-                      <p className="text-xs font-bold text-red-400">{info.holidayName}</p>
+                    <div className={`p-2 rounded text-center border ${info.isClosed ? 'bg-red-500/10 border-red-500/20' : 'bg-orange-500/10 border-orange-500/20'}`}>
+                      <p className={`text-xs font-bold ${info.isClosed ? 'text-red-400' : 'text-orange-400'}`}>{info.holidayName}</p>
+                      {info.isClosed && <p className="text-xs text-brand-textPrimary mt-1">Closed</p>}
+                      {!info.isClosed && info.times.map(time => (
+                         <div key={time} className="mt-1 text-[10px] font-mono text-brand-textPrimary">
+                            {formatTime(time)}
+                         </div>
+                      ))}
                     </div>
                   ) : (
                     info.times.length > 0 ? (
@@ -453,24 +482,36 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                   <p className="text-brand-textSecondary">{format(viewDate, 'MMMM d, yyyy')}</p>
                </div>
                {info.isHoliday && (
-                 <div className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-bold border border-red-500/30">
-                    Holiday
+                 <div className={`px-3 py-1 rounded-full text-xs font-bold border ${info.isClosed ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-orange-500/20 text-orange-400 border-orange-500/30'}`}>
+                    {info.isClosed ? 'Closed' : 'Holiday Schedule'}
                  </div>
                )}
             </div>
 
             {info.isHoliday ? (
-               <div className="text-center py-8 bg-red-500/5 rounded-xl border border-red-500/10">
-                  <ActivityIcon className="w-12 h-12 text-red-400 mx-auto mb-3" />
-                  <h4 className="text-xl font-bold text-red-400 mb-2">{info.holidayName}</h4>
-                  <p className="text-brand-textSecondary mb-4">Holiday hours apply.</p>
-                  <div className="flex flex-wrap gap-3 justify-center">
-                    {info.times.map(time => (
-                       <span key={time} className="px-4 py-2 bg-brand-surface rounded-lg font-mono text-brand-textPrimary border border-brand-border">
-                          {formatTime(time)}
-                       </span>
-                    ))}
-                  </div>
+               <div className={`text-center py-8 rounded-xl border ${info.isClosed ? 'bg-red-500/5 border-red-500/10' : 'bg-orange-500/5 border-orange-500/10'}`}>
+                  {info.isClosed ? (
+                     <XCircleIcon className="w-12 h-12 text-red-400 mx-auto mb-3" />
+                  ) : (
+                     <ActivityIcon className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+                  )}
+                  
+                  <h4 className={`text-xl font-bold mb-2 ${info.isClosed ? 'text-red-400' : 'text-orange-400'}`}>{info.holidayName}</h4>
+                  
+                  {info.isClosed ? (
+                     <p className="text-brand-textPrimary font-bold">GYM CLOSED</p>
+                  ) : (
+                     <>
+                        <p className="text-brand-textSecondary mb-4">Holiday hours apply.</p>
+                        <div className="flex flex-wrap gap-3 justify-center">
+                           {info.times.map(time => (
+                              <span key={time} className="px-4 py-2 bg-brand-surface rounded-lg font-mono text-brand-textPrimary border border-brand-border">
+                                 {formatTime(time)}
+                              </span>
+                           ))}
+                        </div>
+                     </>
+                  )}
                </div>
             ) : (
                <div className="space-y-4">
