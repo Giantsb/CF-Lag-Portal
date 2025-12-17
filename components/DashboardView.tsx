@@ -146,8 +146,20 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
         if (data.items) {
           data.items.forEach((item: any) => {
             const dateStr = item.start.date || item.start.dateTime?.split('T')[0];
+            const summary = item.summary || '';
+            const description = item.description || '';
+
+            // Filter out Observances
+            // We ignore events that are marked as 'Observance' to respect user settings and ensure regular scheduling.
+            if (
+              (description && description.toLowerCase().includes('observance')) || 
+              (summary && summary.toLowerCase().includes('observance'))
+            ) {
+              return;
+            }
+
             if (dateStr) {
-              holidayMap[dateStr] = item.summary;
+              holidayMap[dateStr] = summary;
             }
           });
         }
@@ -215,6 +227,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
     if (holidayName) {
       const lowerName = holidayName.toLowerCase();
+      // Double check for observance just in case it wasn't filtered
       const isObservance = lowerName.includes('observance');
       const isClosedHoliday = lowerName.includes('christmas day') || 
                               lowerName.includes('boxing day') || 
