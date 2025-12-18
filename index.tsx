@@ -1,6 +1,8 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { getServiceWorkerUrl, firebaseConfig } from './services/firebase';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -8,35 +10,9 @@ if (!rootElement) {
 }
 
 if ('serviceWorker' in navigator) {
-  // Pass Firebase config to Service Worker via URL parameters
-  // This avoids hardcoding secrets in the static service worker file
-  
-  // Safe environment variable access
-  const getEnv = () => {
-    try {
-      if ((import.meta as any).env) return (import.meta as any).env;
-    } catch (e) {}
-    try {
-      if (typeof process !== 'undefined' && process.env) return process.env;
-    } catch (e) {}
-    return {};
-  };
-  
-  const env = getEnv();
-
-  const firebaseConfig = {
-    apiKey: env.VITE_FIREBASE_API_KEY,
-    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: env.VITE_FIREBASE_APP_ID,
-    measurementId: env.VITE_FIREBASE_MEASUREMENT_ID
-  };
-
   // Only attempt registration if apiKey exists
   if (firebaseConfig.apiKey) {
-      const swUrl = `./firebase-messaging-sw.js?firebaseConfig=${encodeURIComponent(JSON.stringify(firebaseConfig))}`;
+      const swUrl = getServiceWorkerUrl();
 
       navigator.serviceWorker.register(swUrl)
         .then(function(registration) {
