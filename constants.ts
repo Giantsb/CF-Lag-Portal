@@ -2,10 +2,11 @@
 // Helper to safely access environment variables in different contexts
 const getEnv = () => {
   try {
-    // @ts-ignore
-    if (import.meta && import.meta.env) return import.meta.env;
+    // @ts-ignore - Check for Vite/Modern ESM env
+    if (typeof import.meta !== 'undefined' && import.meta.env) return import.meta.env;
   } catch (e) {}
   try {
+    // @ts-ignore - Check for Node/CommonJS env (used by some builders)
     if (typeof process !== 'undefined' && process.env) return process.env;
   } catch (e) {}
   return {};
@@ -28,4 +29,4 @@ const FALLBACK_SCRIPT_URL_PARTS = [
 
 // Prioritize the environment variable and trim it to avoid invisible character issues
 const rawScriptUrl = env.VITE_GOOGLE_SCRIPT_URL || atob(FALLBACK_SCRIPT_URL_PARTS.join(''));
-export const SCRIPT_URL = rawScriptUrl.trim();
+export const SCRIPT_URL = String(rawScriptUrl).trim();

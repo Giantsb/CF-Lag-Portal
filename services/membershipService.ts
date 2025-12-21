@@ -8,20 +8,22 @@ import { MemberData, LoginResponse } from '../types';
  * To avoid preflight, we MUST use a "Simple Request":
  * 1. Method must be POST
  * 2. Headers must be simple (text/plain is allowed)
- * 3. No custom headers
  */
 async function callAppsScript(payload: any) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); 
+  const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s for cold starts
 
   try {
-    console.log(`[MembershipService] Dispatching ${payload.action} to GAS...`);
+    const urlPreview = `${SCRIPT_URL.substring(0, 15)}...${SCRIPT_URL.substring(SCRIPT_URL.length - 10)}`;
+    console.log(`[MembershipService] Sending ${payload.action} to: ${urlPreview}`);
+    console.log(`[MembershipService] Payload Phone: "${payload.phone}"`);
     
-    // Using a plain string as the body with NO explicit Content-Type header
-    // is the most reliable way to force a Simple Request in modern browsers.
-    // The browser will default to text/plain;charset=UTF-8 which GAS accepts.
+    // Explicitly setting Content-Type to text/plain is the best practice for GAS simple requests
     const response = await fetch(SCRIPT_URL, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain'
+      },
       body: JSON.stringify(payload),
       redirect: 'follow', // Required for GAS redirects to work
       signal: controller.signal
@@ -39,10 +41,10 @@ async function callAppsScript(payload: any) {
       const data = JSON.parse(text);
       return data;
     } catch (e) {
-      // If we got HTML, the script likely crashed on the server
+      // If we got HTML, the script likely crashed on the server or is private
       if (text.trim().toLowerCase().startsWith('<!doctype html')) {
-        console.error('[MembershipService] CRITICAL: Backend returned HTML error page. This usually means your GAS script crashed (check for missing "CONFIG" variable) or Deployment Access is not set to "Anyone".');
-        throw new Error('Backend script error. Please check Google Apps Script logs.');
+        console.error('[MembershipService] CRITICAL: Backend returned HTML. Check if GAS is set to "Anyone" and verify CONFIG variables.');
+        throw new Error('Backend script error. Please verify the Google Apps Script deployment.');
       }
       throw new Error('Server returned invalid data format.');
     }
@@ -50,25 +52,17 @@ async function callAppsScript(payload: any) {
     clearTimeout(timeoutId);
     
     if (err.name === 'AbortError') {
-      throw new Error('Connection timed out. The backend is taking too long to respond.');
+      throw new Error('Connection timed out. The Google Script is taking too long.');
     }
     
-    if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
-      console.error(
-        '[MembershipService] CORS Failure Detected.\n' +
-        '1. Ensure GAS is deployed as "Web App".\n' +
-        '2. Set "Who has access" to "Anyone" (NOT "Anyone with Google Account").\n' +
-        '3. Ensure the script itself is not crashing before it returns the response.'
-      );
-    }
-    
+    console.error('[MembershipService] Request failed:', err.message);
     throw err;
   }
 }
 
 export async function verifyPhoneExists(phone: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const result = await callAppsScript({ action: 'verifyPhone', phone });
+    const result = await callAppsScript({ action: 'verifyPhone', phone: phone.trim() });
     return result.success ? { success: true } : { success: false, error: result.message || 'Phone number not found' };
   } catch (err: any) {
     return { success: false, error: err.message || 'Verification service error.' };
@@ -79,23 +73,25 @@ export async function loginMember(phone: string, hashedPin: string): Promise<Log
   try {
     const result = await callAppsScript({
       action: 'login',
-      phone: phone,
+      phone: phone.trim(),
       hashedPin: hashedPin
     });
 
     if (result.success) {
-      return {
-        success: true,
-        member: result.member,
-        needsSetup: result.needsPin
-      };
+      if (result.invalidPin) {
+        return { success: false, error: 'Invalid PIN. Please try again.', invalidPin: true };
+      }
+      if (result.needsPin) {
+        return { success: true, needsSetup: true };
+      }
+      return { success: true, member: result.member };
     }
 
     return {
       success: false,
-      error: result.message || 'Invalid PIN',
+      error: result.message || 'Invalid credentials.',
       needsSetup: result.needsPin,
-      invalidPin: result.error === 'invalidPin'
+      invalidPin: result.invalidPin
     };
   } catch (err: any) {
     return { success: false, error: err.message || 'Login failed.' };
@@ -106,7 +102,7 @@ export async function createPin(phone: string, hashedPin: string): Promise<{ suc
   try {
     const result = await callAppsScript({
       action: 'setupPin',
-      phone: phone,
+      phone: phone.trim(),
       hashedPin: hashedPin
     });
     return { success: result.success, message: result.message, data: result.data };
@@ -117,7 +113,7 @@ export async function createPin(phone: string, hashedPin: string): Promise<{ suc
 
 export async function getMemberByPhone(phone: string): Promise<MemberData | null> {
   try {
-    const result = await callAppsScript({ action: 'getMember', phone });
+    const result = await callAppsScript({ action: 'getMember', phone: phone.trim() });
     return (result.success && result.member) ? result.member : null;
   } catch (err: any) {
     return null;
@@ -128,7 +124,7 @@ export async function saveNotificationToken(phone: string, token: string): Promi
   try {
     const result = await callAppsScript({
       action: 'saveNotificationToken',
-      phone: phone,
+      phone: phone.trim(),
       token: token
     });
     return { success: result.success, message: result.message };
