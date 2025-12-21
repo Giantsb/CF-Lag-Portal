@@ -23,4 +23,6 @@ export interface LoginResponse {
   needsSetup?: boolean;
   member?: MemberData;
   error?: string;
+  // Added optional invalidPin flag for specific error handling
+  invalidPin?: boolean;
 }

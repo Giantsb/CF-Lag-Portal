@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import LoginView from './components/LoginView';
 import PinSetupView from './components/PinSetupView';
@@ -5,7 +6,6 @@ import DashboardView from './components/DashboardView';
 import InstallPrompt from './components/InstallPrompt';
 import { ViewState, MemberData } from './types';
 import { getMemberByPhone } from './services/membershipService';
-import { auth, onAuthStateChanged, signOut } from './services/firebase';
 
 function App() {
   const [viewState, setViewState] = useState<ViewState>(ViewState.LOGIN);
@@ -22,10 +22,9 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, []);
 
-  // Check for persisted session via Firebase Auth AND LocalStorage (Fallback)
+  // Check for persisted session via LocalStorage
   useEffect(() => {
-    // 1. Check LocalStorage (Fallback for when Firebase Password mismatch occurs due to reset)
-    const checkLocalSession = async () => {
+    const checkSession = async () => {
        const localSession = localStorage.getItem('hoa_session');
        if (localSession) {
           try {
@@ -35,8 +34,8 @@ function App() {
                 if (member) {
                    setMemberData(member);
                    setViewState(ViewState.DASHBOARD);
-                   setIsSessionLoading(false);
-                   return true;
+                } else {
+                   localStorage.removeItem('hoa_session');
                 }
              } else {
                 localStorage.removeItem('hoa_session');
@@ -45,42 +44,10 @@ function App() {
              localStorage.removeItem('hoa_session');
           }
        }
-       return false;
+       setIsSessionLoading(false);
     };
 
-    // 2. Firebase Listener
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      // If we already loaded from local storage, don't overwrite with null from Firebase init
-      const hasLocalSession = await checkLocalSession();
-      if (hasLocalSession) return;
-
-      if (user && user.email) {
-        // User is signed in via Firebase
-        try {
-          const phone = user.email.split('@')[0];
-          const member = await getMemberByPhone(phone);
-          
-          if (member) {
-            setMemberData(member);
-            setViewState(ViewState.DASHBOARD);
-          } else {
-            console.error('User authenticated but not found in records');
-            setViewState(ViewState.LOGIN);
-          }
-        } catch (e) {
-          console.error("Failed to fetch member data for auth user", e);
-          setViewState(ViewState.LOGIN);
-        }
-      } else {
-        // User is signed out in Firebase, and we already checked LocalStorage above
-        // So we stay at Login
-        setMemberData(null);
-        setViewState(ViewState.LOGIN);
-      }
-      setIsSessionLoading(false);
-    });
-
-    return () => unsubscribe();
+    checkSession();
   }, []);
 
   const handleLoginSuccess = (data: MemberData) => {
@@ -94,23 +61,18 @@ function App() {
     setViewState(ViewState.SETUP_PIN);
   };
 
-  const handleForgotPassword = (phone: string) => {
+  const handleResetPin = (phone: string) => {
     setSetupPhone(phone);
     setIsResetMode(true);
     setViewState(ViewState.SETUP_PIN);
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      localStorage.removeItem('hoa_session'); // Clear fallback session
-      setMemberData(null);
-      setSetupPhone('');
-      setIsResetMode(false);
-      setViewState(ViewState.LOGIN);
-    } catch (error) {
-      console.error("Logout failed", error);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('hoa_session');
+    setMemberData(null);
+    setSetupPhone('');
+    setIsResetMode(false);
+    setViewState(ViewState.LOGIN);
   };
 
   const handleSetupSuccess = (member: MemberData) => {
@@ -119,7 +81,6 @@ function App() {
     setSetupPhone('');
     setIsResetMode(false);
     
-    // Set fallback session just in case, since we can't update Firebase password easily
     localStorage.setItem('hoa_session', JSON.stringify({
        phone: member.phone.replace(/[\s\-\(\)]/g, ''),
        expiry: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
@@ -144,9 +105,9 @@ function App() {
     <>
       {viewState === ViewState.LOGIN && (
         <LoginView 
-          onLoginSuccess={handleLoginSuccess} 
+          onSuccess={handleLoginSuccess} 
           onRequireSetup={handleRequireSetup}
-          onForgotPassword={handleForgotPassword}
+          onResetPin={handleResetPin}
         />
       )}
       
@@ -166,7 +127,6 @@ function App() {
         />
       )}
 
-      {/* PWA Install Prompt */}
       <InstallPrompt />
     </>
   );

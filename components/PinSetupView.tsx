@@ -1,19 +1,9 @@
+
 import React, { useState } from 'react';
 import { LockIcon, EyeIcon, EyeOffIcon } from './Icons';
 import { createPin, getMemberByPhone } from '../services/membershipService';
 import { hashPin } from '../utils/encryption';
-import { 
-  auth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  updatePassword,
-  getEmailFromPhone, 
-  getPasswordFromPin,
-  db,
-  doc,
-  setDoc,
-  logAnalyticsEvent
-} from '../services/firebase';
+import { logAnalyticsEvent } from '../services/firebase';
 import { MemberData } from '../types';
 import ThemeToggle from './ThemeToggle';
 
@@ -37,6 +27,7 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
     setError('');
     setSuccess('');
 
+    // 1. Validate PIN
     if (!newPin || newPin.length !== 4) {
       setError('PIN must be exactly 4 digits');
       return;
@@ -50,90 +41,52 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
     setLoading(true);
 
     try {
-      // 1. Create/Sync with Google Sheet (Legacy/Admin Backend)
+      // 2. Hash PIN
+      console.log(`[PinSetup] Hashing PIN for phone: ${phone}`);
       const hashedPin = hashPin(newPin, phone);
-      const sheetResult = await createPin(phone, hashedPin);
+      console.log(`[PinSetup] Hash generated: ${hashedPin.substring(0, 10)}...`);
 
-      if (!sheetResult.success) {
-         throw new Error(sheetResult.message || 'Failed to update database');
-      }
+      // 3. Save to Google Sheets via createPin()
+      console.log(`[PinSetup] Saving PIN to Google Sheets...`);
+      const result = await createPin(phone, hashedPin);
 
-      // 2. Update Firebase Auth (Persistence Layer)
-      const email = getEmailFromPhone(phone);
-      const password = getPasswordFromPin(newPin);
-      
-      let user = auth.currentUser;
-      let firebaseUpdated = false;
+      if (result.success) {
+        console.log(`[PinSetup] Success: PIN ${isReset ? 'reset' : 'setup'} completed in backend.`);
+        
+        // Log Analytics Event
+        logAnalyticsEvent(isReset ? 'pin_reset_success' : 'pin_setup_success', { 
+          phone_hash: hashedPin.substring(0, 8) 
+        });
 
-      if (user) {
-        try {
-          await updatePassword(user, password);
-          firebaseUpdated = true;
-          console.log('Firebase password updated for existing session');
-        } catch (e: any) {
-          console.warn('Failed to update password for active session:', e);
-          if (e.code === 'auth/requires-recent-login') {
-             console.warn('Re-authentication required but not possible. Falling back to Sheet.');
-          }
+        // 4. Show success message
+        setSuccess(`PIN ${isReset ? 'reset' : 'created'} successfully! Logging you in...`);
+        
+        // Artificial delay for better UX visibility of success state
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // 5. Auto-login via getMemberByPhone()
+        console.log(`[PinSetup] Attempting auto-login for: ${phone}`);
+        const member = await getMemberByPhone(phone);
+
+        if (member) {
+          console.log(`[PinSetup] Auto-login successful for ${member.firstName}`);
+          // 6. Call onSuccess(member)
+          onSuccess(member);
+        } else {
+          console.warn(`[PinSetup] PIN updated but could not fetch member data.`);
+          setError('PIN updated, but unable to auto-login. Please try logging in manually.');
+          setTimeout(onBack, 3000);
         }
-      } 
-      else {
-        try {
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          user = userCredential.user;
-          firebaseUpdated = true;
-          logAnalyticsEvent('new_member_registered', { method: 'pin_setup' });
-        } catch (authError: any) {
-          if (authError.code === 'auth/email-already-in-use') {
-             console.log('User exists, treating as PIN Reset/Update');
-             try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                user = userCredential.user;
-                firebaseUpdated = true;
-                console.log('Signed in with new PIN, Firebase is in sync');
-             } catch (signInErr) {
-                console.warn('Cannot sync Firebase password without old credentials. Relying on Fallback Login.');
-                logAnalyticsEvent('pin_reset_fallback_activated', { phone_hash: hashedPin });
-             }
-          } else {
-             throw authError;
-          }
-        }
-      }
-
-      // 3. Update Firestore Profile
-      if (user && firebaseUpdated) {
-        try {
-          await setDoc(doc(db, "users", user.uid), {
-            phone: phone,
-            registeredAt: new Date(),
-            profile: 'main',
-            lastPinUpdate: new Date()
-          }, { merge: true });
-        } catch (e) {
-          console.warn('Failed to update Firestore profile', e);
-        }
-      }
-
-      setSuccess(`PIN ${isReset ? 'reset' : 'created'} successfully! Logging you in...`);
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const member = await getMemberByPhone(phone);
-
-      if (member) {
-        onSuccess(member);
       } else {
-        setError('PIN updated, but unable to auto-login. Please try logging in manually.');
-        setTimeout(onBack, 2000);
+        console.error(`[PinSetup] Backend Error: ${result.message}`);
+        setError(result.message || 'Failed to update PIN. Please try again.');
       }
-
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'An error occurred during setup.');
+      console.error(`[PinSetup] Unexpected Exception:`, err);
+      setError(err.message || 'An unexpected error occurred during setup.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -168,6 +121,7 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
                 onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 placeholder="••••"
                 maxLength={4}
+                inputMode="numeric"
                 className="w-full px-4 py-3 bg-brand-input border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none pr-12 text-brand-textPrimary transition-all placeholder-brand-textSecondary/50"
               />
               <button
@@ -191,6 +145,7 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
                 onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 placeholder="••••"
                 maxLength={4}
+                inputMode="numeric"
                 className="w-full px-4 py-3 bg-brand-input border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none pr-12 text-brand-textPrimary transition-all placeholder-brand-textSecondary/50"
               />
               <button

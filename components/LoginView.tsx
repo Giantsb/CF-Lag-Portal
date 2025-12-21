@@ -1,24 +1,31 @@
+
 import React, { useState } from 'react';
 import { DumbbellIcon, EyeIcon, EyeOffIcon } from './Icons';
-import { verifyPhoneExists, login as fallbackLogin } from '../services/membershipService';
-import { auth, signInWithEmailAndPassword, getEmailFromPhone, getPasswordFromPin, logAnalyticsEvent } from '../services/firebase';
+import { loginMember, verifyPhoneExists } from '../services/membershipService';
+import { logAnalyticsEvent } from '../services/firebase';
 import { hashPin } from '../utils/encryption';
 import { MemberData } from '../types';
 import ThemeToggle from './ThemeToggle';
 
 interface LoginViewProps {
-  onLoginSuccess: (member: MemberData) => void;
+  onSuccess: (member: MemberData) => void;
   onRequireSetup: (phone: string) => void;
-  onForgotPassword: (phone: string) => void;
+  onResetPin: (phone: string) => void;
 }
 
-const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, onForgotPassword }) => {
+const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onResetPin }) => {
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow digits and max 11 characters
+    const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+    setPhone(val);
+  };
 
   const handleLogin = async () => {
     setError('');
@@ -36,65 +43,44 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
       return;
     }
 
+    console.log('Login attempt for:', phone);
+
     try {
-      // 1. Attempt to sign in with Firebase (Persistent Session)
-      const email = getEmailFromPhone(phone);
-      const password = getPasswordFromPin(pin);
-      
-      await signInWithEmailAndPassword(auth, email, password);
-      
-      // Log analytics event
-      logAnalyticsEvent('user_login_success', { method: 'firebase_auth' });
-      
-      // onAuthStateChanged in App.tsx will handle the rest.
+      const hashedPin = hashPin(pin, phone);
+      console.log('Generated hash:', hashedPin);
 
-    } catch (firebaseError: any) {
-      console.log("Firebase login failed, checking fallback:", firebaseError.code);
+      const result = await loginMember(phone, hashedPin);
+      console.log('API Response:', result);
       
-      // 2. FALLBACK MECHANISM
-      if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/user-not-found') {
+      if (result.success && result.member) {
+        console.log('Login Success:', result.member);
         
-        try {
-           // Hash pin locally for comparison/sending
-           const hashedPin = hashPin(pin, phone);
-           
-           // Verify against Google Sheet directly
-           const fallbackResult = await fallbackLogin(phone, hashedPin);
-           
-           if (fallbackResult.success && fallbackResult.member) {
-              // Login Success via Fallback!
-              localStorage.setItem('hoa_session', JSON.stringify({
-                 phone: phone,
-                 expiry: new Date().getTime() + (30 * 24 * 60 * 60 * 1000) // 30 days
-              }));
-              
-              logAnalyticsEvent('user_login_success', { method: 'fallback_sheet' });
-              onLoginSuccess(fallbackResult.member);
-              return; // Exit
-           } else if (fallbackResult.needsSetup) {
-              // PIN not set in sheet
-              onRequireSetup(phone);
-              setLoading(false);
-              return;
-           } else {
-              // Invalid PIN in sheet too
-               setError('Invalid PIN or Phone Number');
-           }
-        } catch (fallbackErr) {
-           setError('Login failed. Please check connection.');
-        }
-
+        // Handle session persistence
+        localStorage.setItem('hoa_session', JSON.stringify({
+           phone: phone,
+           expiry: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
+        }));
+        
+        logAnalyticsEvent('user_login_success', { method: 'sheets_backend' });
+        onSuccess(result.member);
+      } else if (result.needsSetup) {
+        console.log('Login Progress: Redirecting to PIN setup');
+        onRequireSetup(phone);
       } else {
-        setError('Login failed: ' + (firebaseError.message || 'Unknown error'));
+        const errorMsg = result.error || 'Invalid PIN or Phone Number';
+        console.log('Login Failed:', errorMsg);
+        setError(errorMsg);
       }
+    } catch (err) {
+      console.error('Login system error:', err);
+      setError('Login failed. Please check your connection.');
     }
 
     setLoading(false);
   };
 
-  const handleForgotPasswordClick = async () => {
+  const handleForgotPinClick = async () => {
     setError('');
-    
     if (!phone || phone.length < 10) {
       setError('Please enter your phone number to reset PIN');
       return;
@@ -105,7 +91,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
     setLoading(false);
     
     if (result.success) {
-      onForgotPassword(phone);
+      onResetPin(phone);
     } else {
       setError(result.error || 'Phone number not found');
     }
@@ -135,8 +121,9 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
             <input
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter Phone Number"
+              onChange={handlePhoneChange}
+              placeholder="08012345678"
+              inputMode="tel"
               className="w-full px-4 py-3 bg-brand-input border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none text-brand-textPrimary transition-all placeholder-brand-textSecondary/50"
             />
           </div>
@@ -152,6 +139,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 placeholder="••••"
                 maxLength={4}
+                inputMode="numeric"
                 className="w-full px-4 py-3 bg-brand-input border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none pr-12 text-brand-textPrimary transition-all placeholder-brand-textSecondary/50"
               />
               <button
@@ -178,10 +166,10 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
               </div>
               <button 
                 type="button"
-                onClick={handleForgotPasswordClick}
+                onClick={handleForgotPinClick}
                 className="text-xs text-brand-accent hover:underline focus:outline-none"
               >
-                Forgot/Setup PIN?
+                Forgot PIN?
               </button>
             </div>
           </div>
@@ -199,11 +187,6 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onRequireSetup, o
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
-        </div>
-
-        <div className="mt-6 text-center text-sm text-brand-textSecondary">
-          <p>Having trouble logging in?</p>
-          <p className="mt-1">Contact CrossFit Lagos administration</p>
         </div>
       </div>
     </div>
