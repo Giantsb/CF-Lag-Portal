@@ -26,5 +26,6 @@ const FALLBACK_SCRIPT_URL_PARTS = [
   'LXM4R3Znc2tlOHpvdVJmMU5xbzZ2azFxRDNoT0t5OVBRRllZMHNwTDR3cG5EUWgvZXhlYw=='
 ];
 
-// Prioritize the environment variable provided by the user
-export const SCRIPT_URL = env.VITE_GOOGLE_SCRIPT_URL || atob(FALLBACK_SCRIPT_URL_PARTS.join(''));
+// Prioritize the environment variable and trim it to avoid invisible character issues
+const rawScriptUrl = env.VITE_GOOGLE_SCRIPT_URL || atob(FALLBACK_SCRIPT_URL_PARTS.join(''));
+export const SCRIPT_URL = rawScriptUrl.trim();
