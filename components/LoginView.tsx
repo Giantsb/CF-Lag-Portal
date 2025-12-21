@@ -22,39 +22,31 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
   const [loading, setLoading] = useState(false);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow digits and max 11 characters
     const val = e.target.value.replace(/\D/g, '').slice(0, 11);
     setPhone(val);
   };
 
   const handleLogin = async () => {
     setError('');
-    setLoading(true);
-
+    
     if (!phone || phone.length < 10) {
       setError('Please enter a valid phone number');
-      setLoading(false);
       return;
     }
 
     if (!pin || pin.length !== 4) {
       setError('Please enter a 4-digit PIN');
-      setLoading(false);
       return;
     }
 
-    console.log('Login attempt for:', phone);
+    setLoading(true);
+    console.log('[LoginView] initiating login process...');
 
     try {
       const hashedPin = hashPin(pin, phone);
-      console.log('Generated hash:', hashedPin);
-
       const result = await loginMember(phone, hashedPin);
-      console.log('API Response:', result);
       
       if (result.success && result.member) {
-        console.log('Login Success:', result.member);
-        
         // Handle session persistence
         localStorage.setItem('hoa_session', JSON.stringify({
            phone: phone,
@@ -64,36 +56,37 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
         logAnalyticsEvent('user_login_success', { method: 'sheets_backend' });
         onSuccess(result.member);
       } else if (result.needsSetup) {
-        console.log('Login Progress: Redirecting to PIN setup');
         onRequireSetup(phone);
       } else {
-        const errorMsg = result.error || 'Invalid PIN or Phone Number';
-        console.log('Login Failed:', errorMsg);
-        setError(errorMsg);
+        setError(result.error || 'Access denied. Please check your credentials.');
       }
-    } catch (err) {
-      console.error('Login system error:', err);
-      setError('Login failed. Please check your connection.');
+    } catch (err: any) {
+      console.error('[LoginView] Runtime Error:', err);
+      setError('Unable to connect to login service. Please check your internet.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleForgotPinClick = async () => {
     setError('');
     if (!phone || phone.length < 10) {
-      setError('Please enter your phone number to reset PIN');
+      setError('Please enter your phone number first');
       return;
     }
     
     setLoading(true);
-    const result = await verifyPhoneExists(phone);
-    setLoading(false);
-    
-    if (result.success) {
-      onResetPin(phone);
-    } else {
-      setError(result.error || 'Phone number not found');
+    try {
+      const result = await verifyPhoneExists(phone);
+      if (result.success) {
+        onResetPin(phone);
+      } else {
+        setError(result.error || 'We could not find this phone number in our records.');
+      }
+    } catch (err) {
+      setError('Verification service currently unavailable.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -175,7 +168,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
           </div>
 
           {error && (
-            <div className="bg-brand-danger/10 border border-brand-danger text-brand-danger px-4 py-3 rounded-lg text-sm">
+            <div className="bg-brand-danger/10 border border-brand-danger text-brand-danger px-4 py-3 rounded-lg text-sm animate-pulse">
               {error}
             </div>
           )}
@@ -183,9 +176,14 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full bg-brand-accent text-brand-accentText py-3 rounded-lg font-bold hover:bg-brand-accentHover transition disabled:bg-gray-600 disabled:cursor-not-allowed"
+            className="w-full bg-brand-accent text-brand-accentText py-3 rounded-lg font-bold hover:bg-brand-accentHover transition disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Connecting...
+              </>
+            ) : 'Login'}
           </button>
         </div>
       </div>

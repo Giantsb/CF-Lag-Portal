@@ -1,191 +1,177 @@
+
 import { SCRIPT_URL } from '../constants';
 import { MemberData, LoginResponse } from '../types';
 
 /**
- * Attempts to log in a member via the Apps Script API.
+ * Common fetch wrapper for Apps Script POST requests.
+ * Uses 'text/plain' to ensure a "Simple Request" that bypasses CORS preflight (OPTIONS).
  */
-export const loginMember = async (phone: string, hashedPin: string): Promise<LoginResponse> => {
-  console.log(`[MembershipService] Attempting login for phone: ${phone}`);
+async function callAppsScript(payload: any) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000); // Increased timeout to 20s for slow GAS cold starts
+
   try {
+    console.log(`[MembershipService] Initiating POST to GAS...`, { action: payload.action });
+    
     const response = await fetch(SCRIPT_URL, {
       method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'login',
-        phone: phone,
-        hashedPin: hashedPin
-      })
+      // 'cors' is fine, but 'credentials: omit' and 'text/plain' are key to 
+      // avoiding the preflight request that GAS doesn't handle.
+      mode: 'cors',
+      credentials: 'omit',
+      redirect: 'follow', 
+      headers: {
+        'Content-Type': 'text/plain', 
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
     }
 
-    const result = await response.json();
-    console.log('[MembershipService] Login API response:', result);
-
-    if (result.success) {
-      console.log('[MembershipService] Login successful');
-      return { 
-        success: true, 
-        member: result.member,
-        needsSetup: result.needsPin // Maps backend 'needsPin' to 'needsSetup'
-      };
+    const text = await response.text();
+    try {
+      const json = JSON.parse(text);
+      return json;
+    } catch (e) {
+      console.error('[MembershipService] JSON Parse Error. Raw response:', text);
+      throw new Error('Received malformed response from server.');
     }
-
-    // Handle specific error cases
-    const errorMsg = result.message || 'Login failed';
-    console.warn(`[MembershipService] Login failed: ${errorMsg}`);
-    
-    return { 
-      success: false, 
-      error: errorMsg,
-      needsSetup: result.needsPin,
-      invalidPin: result.error === 'invalidPin'
-    };
   } catch (err: any) {
-    console.error('[MembershipService] Login request exception:', err);
-    return { success: false, error: err.message || 'Network error occurred during login.' };
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Server took too long to respond. Please try again.');
+    }
+    console.error('[MembershipService] Fetch operation failed:', err);
+    throw err;
   }
-};
+}
 
 /**
  * Verifies if a phone number exists in the database for PIN recovery.
  */
-export const verifyPhoneExists = async (phone: string): Promise<{ success: boolean; error?: string }> => {
-  console.log(`[MembershipService] Verifying phone: ${phone}`);
+export async function verifyPhoneExists(phone: string): Promise<{ success: boolean; error?: string }> {
+  console.log(`[MembershipService] verifyPhoneExists called for: ${phone}`);
   try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'verifyPhone',
-        phone: phone
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = await callAppsScript({ action: 'verifyPhone', phone });
     if (result.success) {
+      console.log('[MembershipService] verifyPhoneExists: Success');
       return { success: true };
     }
+    console.warn('[MembershipService] verifyPhoneExists: Not found', result.message);
     return { success: false, error: result.message || 'Phone number not found' };
   } catch (err: any) {
-    console.error('[MembershipService] Verify phone exception:', err);
     return { success: false, error: err.message || 'Network error occurred.' };
   }
-};
+}
+
+/**
+ * Attempts to log in a member via the Apps Script API.
+ */
+export async function loginMember(phone: string, hashedPin: string): Promise<LoginResponse> {
+  console.log(`[MembershipService] loginMember called for: ${phone}`);
+  try {
+    const result = await callAppsScript({
+      action: 'login',
+      phone: phone,
+      hashedPin: hashedPin
+    });
+
+    if (result.success) {
+      console.log('[MembershipService] loginMember: Success');
+      return {
+        success: true,
+        member: result.member,
+        needsSetup: result.needsPin
+      };
+    }
+
+    console.warn('[MembershipService] loginMember: Failed', result.message);
+    return {
+      success: false,
+      error: result.message || 'Invalid credentials',
+      needsSetup: result.needsPin,
+      invalidPin: result.error === 'invalidPin'
+    };
+  } catch (err: any) {
+    return { 
+      success: false, 
+      error: err.message || 'Login service unavailable.' 
+    };
+  }
+}
 
 /**
  * Creates or resets a member's PIN in the Google Sheet backend.
  */
-export const createPin = async (phone: string, hashedPin: string): Promise<{ success: boolean; message?: string; data?: any }> => {
-  console.log(`[MembershipService] Setting up PIN for phone: ${phone}`);
+export async function createPin(phone: string, hashedPin: string): Promise<{ success: boolean; message?: string; data?: any }> {
+  console.log(`[MembershipService] createPin called for: ${phone}`);
   try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'setupPin',
-        phone: phone,
-        hashedPin: hashedPin
-      })
+    const result = await callAppsScript({
+      action: 'setupPin',
+      phone: phone,
+      hashedPin: hashedPin
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('[MembershipService] PIN setup response:', result);
-
     if (result.success) {
-      console.log('[MembershipService] PIN setup successful');
-      return { success: true, message: result.message, data: result.data };
+      console.log('[MembershipService] createPin: Success');
+    } else {
+      console.warn('[MembershipService] createPin: Failed', result.message);
     }
 
-    console.warn('[MembershipService] PIN setup failed:', result.message);
-    return { success: false, message: result.message || 'Failed to setup PIN' };
+    return {
+      success: result.success,
+      message: result.message,
+      data: result.data
+    };
   } catch (err: any) {
-    console.error('[MembershipService] PIN setup exception:', err);
-    return { success: false, message: err.message || 'Network error during PIN setup.' };
+    return {
+      success: false,
+      message: err.message || 'Failed to update PIN.'
+    };
   }
-};
+}
 
 /**
  * Retrieves member data for an active session by phone number.
  */
-export const getMemberByPhone = async (phone: string): Promise<MemberData | null> => {
-  console.log(`[MembershipService] Fetching member data for: ${phone}`);
+export async function getMemberByPhone(phone: string): Promise<MemberData | null> {
+  console.log(`[MembershipService] getMemberByPhone called for: ${phone}`);
   try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'getMember',
-        phone: phone
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    
+    const result = await callAppsScript({ action: 'getMember', phone });
     if (result.success && result.member) {
-      console.log('[MembershipService] Member data retrieved successfully');
+      console.log('[MembershipService] getMemberByPhone: Success');
       return result.member;
     }
-
-    console.warn('[MembershipService] Member not found or retrieval failed');
     return null;
   } catch (err: any) {
-    console.error('[MembershipService] GetMember exception:', err);
     return null;
   }
-};
+}
 
 /**
  * Saves the FCM notification token for a member.
  */
-export const saveNotificationToken = async (phone: string, token: string): Promise<{ success: boolean; message?: string }> => {
-  console.log(`[MembershipService] Saving notification token for: ${phone}`);
+export async function saveNotificationToken(phone: string, token: string): Promise<{ success: boolean; message?: string }> {
+  console.log(`[MembershipService] saveNotificationToken called for: ${phone}`);
   try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'saveNotificationToken',
-        phone: phone,
-        token: token
-      })
+    const result = await callAppsScript({
+      action: 'saveNotificationToken',
+      phone: phone,
+      token: token
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('[MembershipService] Save notification token response:', result);
-
-    if (result.success) {
-      console.log('[MembershipService] Token saved successfully');
-      return { success: true, message: result.message };
-    }
-
-    console.warn('[MembershipService] Failed to save token:', result.message);
-    return { success: false, message: result.message || 'Failed to save notification token' };
+    return {
+      success: result.success,
+      message: result.message
+    };
   } catch (err: any) {
-    console.error('[MembershipService] Save token exception:', err);
-    return { success: false, message: err.message || 'Network error while saving notification token.' };
+    return {
+      success: false,
+      message: err.message || 'Failed to save token.'
+    };
   }
-};
+}
