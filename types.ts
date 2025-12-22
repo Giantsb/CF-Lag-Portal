@@ -1,3 +1,4 @@
+
 export interface MemberData {
   firstName: string;
   lastName: string;
@@ -12,6 +13,13 @@ export interface MemberData {
   pauseDays: string;
 }
 
+export interface WodEntry {
+  date: string;
+  displayDate?: string;
+  workout: string;
+  coach_notes?: string;
+}
+
 export enum ViewState {
   LOGIN,
   SETUP_PIN,
@@ -23,6 +31,5 @@ export interface LoginResponse {
   needsSetup?: boolean;
   member?: MemberData;
   error?: string;
-  // Added optional invalidPin flag for specific error handling
   invalidPin?: boolean;
 }

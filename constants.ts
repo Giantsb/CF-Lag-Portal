@@ -30,3 +30,6 @@ const FALLBACK_SCRIPT_URL_PARTS = [
 // Prioritize the environment variable and trim it to avoid invisible character issues
 const rawScriptUrl = env.VITE_GOOGLE_SCRIPT_URL || atob(FALLBACK_SCRIPT_URL_PARTS.join(''));
 export const SCRIPT_URL = String(rawScriptUrl).trim();
+
+// WOD Script URL from environment variable
+export const WOD_SCRIPT_URL = (env.VITE_WOD_INAPP_MESSAGING_SCRIPT_URL || '').trim();

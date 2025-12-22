@@ -5,8 +5,6 @@ import {
   CreditCardIcon, 
   ActivityIcon, 
   PhoneIcon, 
-  AlertTriangleIcon, 
-  XCircleIcon, 
   ClockIcon,
   CopyIcon,
   CheckCircleIcon,
@@ -18,16 +16,18 @@ import {
   CalendarIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  BellIcon,
   FileTextIcon,
-  ArrowDownCircleIcon
+  ArrowDownCircleIcon,
+  // Added LockIcon to fix the missing import error
+  LockIcon
 } from './Icons';
 import { MemberData } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
 import ThemeToggle from './ThemeToggle';
+import WodContainer from './WodContainer';
 import { 
   format, addMonths, subMonths, startOfMonth, endOfMonth, 
-  startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays, 
+  startOfWeek, endOfWeek, isSameMonth, addDays, 
   eachDayOfInterval, isToday, subWeeks, addWeeks
 } from 'date-fns';
 
@@ -64,7 +64,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies' | 'wod'>('dashboard');
+  const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
   
   const [viewDate, setViewDate] = useState(new Date());
   const [scheduleViewMode, setScheduleViewMode] = useState<ViewMode>('month');
@@ -286,6 +287,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
       <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-brand-dark border-r border-brand-border transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col pt-16 lg:pt-0`}>
          <nav className="flex-1 px-4 py-4 space-y-2">
             <button onClick={() => { setCurrentView('dashboard'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><HomeIcon className="w-5 h-5" />Dashboard</button>
+            
+            {/* Restricted Content: WOD is only visible for valid members */}
+            {isValid && (
+              <button onClick={() => { setCurrentView('wod'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'wod' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><DumbbellIcon className="w-5 h-5" />Workout (WOD)</button>
+            )}
+
             <button onClick={() => { setCurrentView('schedule'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'schedule' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><CalendarIcon className="w-5 h-5" />Schedule</button>
             <button onClick={() => { setShowPaymentModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><CreditCardIcon className="w-5 h-5" />Renew</button>
             <button onClick={() => { setCurrentView('policies'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'policies' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><FileTextIcon className="w-5 h-5" />Policies</button>
@@ -434,6 +441,26 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
               </div>
             )}
             
+            {/* Double Check: Don't render WOD if member is invalid, even if state says otherwise */}
+            {currentView === 'wod' && isValid && <WodContainer />}
+            {currentView === 'wod' && !isValid && (
+              <div className="bg-brand-dark border border-brand-border rounded-2xl p-8 text-center max-w-xl mx-auto shadow-2xl">
+                 <div className="bg-brand-danger/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-danger">
+                   <LockIcon className="w-10 h-10" />
+                 </div>
+                 <h2 className="text-2xl font-bold text-brand-textPrimary mb-2">Membership Required</h2>
+                 <p className="text-brand-textSecondary mb-8 leading-relaxed">
+                   The Workout of the Day (WOD) is premium content reserved for active members. Please renew your subscription to access daily training programs.
+                 </p>
+                 <button 
+                  onClick={() => setShowPaymentModal(true)}
+                  className="w-full bg-brand-accent text-brand-accentText font-bold py-4 rounded-xl hover:bg-brand-accentHover transition-colors shadow-lg shadow-brand-accent/20"
+                 >
+                   Renew Subscription Now
+                 </button>
+              </div>
+            )}
+
             {currentView === 'schedule' && (
               <div className="bg-brand-dark border border-brand-border rounded-xl p-4 md:p-6 shadow-xl">
                 {renderCalendarHeader()}
@@ -444,21 +471,145 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             )}
 
             {currentView === 'policies' && (
-              <div className="bg-brand-dark p-6 rounded-2xl border border-brand-border max-w-2xl mx-auto">
-                <h2 className="text-2xl font-bold mb-6 text-brand-textPrimary">Gym Policies</h2>
-                <div className="space-y-6">
-                  <section>
-                    <h3 className="font-bold text-brand-accent mb-2 uppercase text-sm tracking-wider">Membership Freezing</h3>
-                    <p className="text-brand-textSecondary text-sm leading-relaxed">Membership is time-based. Freezing is allowed for long-term plans (3 months or more) with at least 48 hours notice. Medical freezes require documentation.</p>
-                  </section>
-                  <section>
-                    <h3 className="font-bold text-brand-accent mb-2 uppercase text-sm tracking-wider">Class Punctuality</h3>
-                    <p className="text-brand-textSecondary text-sm leading-relaxed">Please arrive 5-10 minutes before your session. Late arrivals (more than 10 mins) may be asked to skip the session for safety reasons.</p>
-                  </section>
-                  <section>
-                    <h3 className="font-bold text-brand-accent mb-2 uppercase text-sm tracking-wider">Cancellations</h3>
-                    <p className="text-brand-textSecondary text-sm leading-relaxed">Monthly subscriptions are non-refundable once activated. Automatic renewals can be cancelled 5 days before the next billing cycle.</p>
-                  </section>
+              <div className="bg-brand-dark p-6 rounded-2xl border border-brand-border max-w-3xl mx-auto animate-fadeIn">
+                <h2 className="text-2xl font-bold mb-4 text-brand-textPrimary">CrossFit Gym Policies & Terms</h2>
+                <p className="text-brand-textSecondary text-sm leading-relaxed mb-6">
+                  By creating an account or registering a membership, you agree to the policies below. These terms ensure a safe, fair, and consistent training environment for all members.
+                </p>
+
+                <div className="border-t border-brand-border pt-4">
+                   <button
+                      onClick={() => setIsPoliciesExpanded(!isPoliciesExpanded)}
+                      className="w-full flex items-center justify-between p-3 rounded-xl bg-brand-surface hover:bg-brand-accent/10 transition-colors group"
+                   >
+                      <span className="font-bold text-brand-textPrimary">
+                        {isPoliciesExpanded ? "Hide Full Policies" : "View Detailed Terms & Policies"}
+                      </span>
+                      {isPoliciesExpanded ? (
+                        <ChevronUpIcon className="w-5 h-5 text-brand-accent" />
+                      ) : (
+                        <ChevronDownIcon className="w-5 h-5 text-brand-textSecondary group-hover:text-brand-accent" />
+                      )}
+                   </button>
+
+                   {isPoliciesExpanded && (
+                      <div className="mt-8 space-y-8 animate-fadeIn">
+                         {/* 1. Membership Overview */}
+                         <section>
+                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">1. Membership Overview</h3>
+                            <ul className="space-y-3 text-sm text-brand-textSecondary">
+                               <li className="flex gap-3">
+                                  <span className="text-brand-accent font-bold">•</span>
+                                  <span>All memberships are <strong>time-based</strong>, not attendance-based.</span>
+                               </li>
+                               <li className="flex gap-3">
+                                  <span className="text-brand-accent font-bold">•</span>
+                                  <span>Membership becomes active on the selected start date.</span>
+                               </li>
+                               <li className="flex gap-3">
+                                  <span className="text-brand-accent font-bold">•</span>
+                                  <span>Missed sessions or unused days cannot be refunded, rolled over, or extended.</span>
+                               </li>
+                            </ul>
+                         </section>
+
+                         {/* 2. Membership Freeze Policy */}
+                         <section>
+                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">2. Membership Freeze (Pause) Policy</h3>
+                            <p className="text-sm text-brand-textSecondary mb-4 leading-relaxed">Members may request to pause their membership due to travel, injury, or personal reasons.</p>
+                            
+                            <div className="grid md:grid-cols-2 gap-6">
+                               <div className="bg-brand-black/20 p-4 rounded-xl border border-brand-border">
+                                  <h4 className="text-brand-textPrimary font-bold text-xs uppercase mb-3 underline decoration-brand-accent underline-offset-4">Eligibility & Conditions</h4>
+                                  <ul className="space-y-2 text-xs text-brand-textSecondary">
+                                     <li>• Requests must be submitted <strong>before</strong> the planned break.</li>
+                                     <li>• Only <strong>active memberships</strong> may be paused.</li>
+                                     <li>• Pauses extend the membership by the same number of days.</li>
+                                     <li>• Not granted if submitted within <strong>7 days</strong> of expiration.</li>
+                                  </ul>
+                               </div>
+                               <div className="bg-brand-black/20 p-4 rounded-xl border border-brand-border">
+                                  <h4 className="text-brand-textPrimary font-bold text-xs uppercase mb-3 underline decoration-brand-accent underline-offset-4">Allowed Pause Duration</h4>
+                                  <ul className="space-y-2 text-xs text-brand-textSecondary">
+                                     <li>• <strong>Monthly Plans:</strong> Up to 14 days</li>
+                                     <li>• <strong>3- & 6-Month Plans:</strong> 14–20 days</li>
+                                     <li>• <strong>12-Month Plans:</strong> 14–25 days</li>
+                                     <li className="text-[10px] italic mt-2 opacity-70">* Only one pause allowed per cycle.</li>
+                                  </ul>
+                               </div>
+                            </div>
+                         </section>
+
+                         {/* 3. Refund Policy */}
+                         <section>
+                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">3. Refund Policy</h3>
+                            <p className="text-sm text-brand-textSecondary mb-4">The gym maintains a strict no-refund policy. No refunds will be issued for:</p>
+                            <div className="bg-brand-danger/5 border border-brand-danger/20 p-4 rounded-xl mb-4">
+                               <ul className="grid grid-cols-2 gap-2 text-xs text-brand-textSecondary font-medium">
+                                  <li>• Unused days</li>
+                                  <li>• Missed sessions</li>
+                                  <li>• Early cancellation</li>
+                                  <li>• Loss of interest</li>
+                               </ul>
+                            </div>
+                            <h4 className="text-brand-textPrimary font-bold text-xs uppercase mb-2">Exceptions (Management Review Only)</h4>
+                            <ul className="space-y-2 text-xs text-brand-textSecondary">
+                               <li>• Documented long-term medical conditions.</li>
+                               <li>• Instances where the gym is unable to provide the contracted service.</li>
+                            </ul>
+                         </section>
+
+                         {/* 4. Non-Transferable */}
+                         <section>
+                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-2 pb-1 border-b border-brand-accent/20">4. Non-Transferable Memberships</h3>
+                            <p className="text-sm text-brand-textSecondary">All memberships are personal and cannot be transferred or shared.</p>
+                         </section>
+
+                         {/* 5. Health & Safety */}
+                         <section>
+                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">5. Health & Safety Requirements</h3>
+                            <ul className="space-y-2 text-sm text-brand-textSecondary">
+                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Members must disclose injuries or medical conditions.</span></li>
+                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Follow coaching instructions and train within your limits.</span></li>
+                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Use equipment safely and responsibly.</span></li>
+                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Wear suitable athletic attire and shoes.</span></li>
+                            </ul>
+                         </section>
+
+                         {/* 6. Class Etiquette */}
+                         <section>
+                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">6. Class Etiquette & Conduct</h3>
+                            <ul className="space-y-2 text-sm text-brand-textSecondary">
+                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Arrive on time for classes.</span></li>
+                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Respect coaches and fellow members.</span></li>
+                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Clean and return equipment after use.</span></li>
+                               <li className="flex gap-3"><span className="text-brand-accent font-bold">!</span><span className="font-medium text-brand-danger/80">Unsafe behavior may lead to membership termination without refund.</span></li>
+                            </ul>
+                         </section>
+
+                         {/* 7. Photography & Media */}
+                         <section>
+                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-2 pb-1 border-b border-brand-accent/20">7. Photography & Media</h3>
+                            <p className="text-sm text-brand-textSecondary leading-relaxed">The gym may capture photos/videos during classes for community or promotional purposes. Members may request exemption by notifying management in writing.</p>
+                         </section>
+
+                         {/* 8. Liability Waiver */}
+                         <section>
+                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">8. Liability Waiver</h3>
+                            <ul className="space-y-3 text-sm text-brand-textSecondary">
+                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>You acknowledge that CrossFit training involves physical risk.</span></li>
+                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>You participate voluntarily and assume responsibility for your own safety.</span></li>
+                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>The gym is not liable for injuries caused by improper form or ignored instructions.</span></li>
+                            </ul>
+                         </section>
+
+                         {/* 9. Agreement */}
+                         <section className="bg-brand-accent/5 p-4 rounded-xl border border-brand-accent/20">
+                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-2">9. Agreement</h3>
+                            <p className="text-sm text-brand-textPrimary font-bold italic">By registering or using the gym facilities, you confirm that you have read and agree to these terms.</p>
+                         </section>
+                      </div>
+                   )}
                 </div>
               </div>
             )}
