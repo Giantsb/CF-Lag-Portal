@@ -19,7 +19,8 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   BellIcon,
-  FileTextIcon
+  FileTextIcon,
+  ArrowDownCircleIcon
 } from './Icons';
 import { MemberData } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
@@ -64,12 +65,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies'>('dashboard');
-  const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
   
   const [viewDate, setViewDate] = useState(new Date());
   const [scheduleViewMode, setScheduleViewMode] = useState<ViewMode>('month');
   const [holidays, setHolidays] = useState<Record<string, string>>({});
-  const [holidayError, setHolidayError] = useState(false);
   
   const statusLower = member.status.toLowerCase();
   const isValid = statusLower.includes('valid') || statusLower.includes('active');
@@ -131,9 +130,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
           });
           setHolidays(holidayMap);
         }
-      } catch (err) {
-        setHolidayError(true);
-      }
+      } catch (err) {}
     };
     fetchHolidays();
   }, []);
@@ -300,27 +297,222 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
       </aside>
 
       <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-8 overflow-y-auto">
-         <div className="max-w-4xl mx-auto">
+         <div className="max-w-5xl mx-auto">
             {currentView === 'dashboard' && (
-              <>
-                 <header className="mb-6"><h2 className="text-2xl font-bold text-brand-textPrimary">Dashboard</h2><p className="text-brand-textSecondary text-sm">Welcome, {member.firstName}</p></header>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className={`p-5 rounded-xl border ${borderColor} ${bgColor} flex items-center gap-4`}><div className="w-14 h-14 rounded-full bg-brand-black flex items-center justify-center"><UserIcon className="w-7 h-7" /></div><div><h3 className="font-bold text-lg text-brand-textPrimary">{member.firstName} {member.lastName}</h3><div className={`flex items-center gap-1.5 text-sm font-medium ${statusColor}`}><span>{member.status}</span></div></div></div>
-                    <div className="p-5 rounded-xl border border-brand-border bg-brand-dark"><div className="flex justify-between items-end mb-2"><span className="text-brand-textSecondary text-xs font-bold uppercase">Expires</span><span className={`text-xl font-bold ${isExpiringSoon ? 'text-yellow-500' : 'text-brand-accent'}`}>{isExpired ? 'Expired' : `${diffDays} Days`}</span></div><div className="w-full bg-brand-black rounded-full h-2.5 mb-2 overflow-hidden"><div className={`h-full ${barColor}`} style={{ width: `${progressPercentage}%` }}></div></div></div>
+              <div className="space-y-6">
+                 <header className="flex justify-between items-end">
+                    <div>
+                      <h2 className="text-3xl font-bold text-brand-textPrimary">Dashboard</h2>
+                      <p className="text-brand-textSecondary">Welcome back, <span className="text-brand-accent font-bold">{member.firstName}</span></p>
+                    </div>
+                    <div className="hidden md:block">
+                      <ThemeToggle />
+                    </div>
+                 </header>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Status Card */}
+                    <div className={`p-5 rounded-2xl border ${borderColor} ${bgColor} flex flex-col justify-between min-h-[140px] shadow-sm`}>
+                      <div className="flex justify-between items-start">
+                        <div className="p-2 bg-brand-black/20 rounded-lg">
+                          <UserIcon className="w-6 h-6 text-brand-textPrimary" />
+                        </div>
+                        <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full bg-brand-black/20 ${statusColor}`}>{member.status}</span>
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg text-brand-textPrimary leading-tight">{member.firstName} {member.lastName}</h3>
+                        <p className="text-brand-textSecondary text-xs">{member.email}</p>
+                      </div>
+                    </div>
+
+                    {/* Next Class Card */}
+                    <div className="p-5 rounded-2xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[140px] shadow-sm">
+                      <div className="flex justify-between items-start">
+                        <div className="p-2 bg-brand-accent/10 rounded-lg text-brand-accent">
+                          <ClockIcon className="w-6 h-6" />
+                        </div>
+                        <span className="text-[10px] font-bold text-brand-textSecondary uppercase">Upcoming Session</span>
+                      </div>
+                      <div>
+                        {nextClassInfo.time ? (
+                          <>
+                            <p className="text-brand-accent font-bold text-sm uppercase">{nextClassInfo.dayName}</p>
+                            <h3 className="text-xl font-bold text-brand-textPrimary">{nextClassInfo.time}</h3>
+                          </>
+                        ) : (
+                          <p className="text-brand-textSecondary text-sm font-medium italic">Check schedule for times</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Expiry Card */}
+                    <div className="p-5 rounded-2xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[140px] shadow-sm">
+                      <div className="flex justify-between items-start">
+                        <div className="p-2 bg-brand-accent/10 rounded-lg text-brand-accent">
+                          <ActivityIcon className="w-6 h-6" />
+                        </div>
+                        <div className="text-right">
+                           <span className={`text-lg font-bold block ${isExpiringSoon ? 'text-yellow-500' : 'text-brand-textPrimary'}`}>
+                             {isExpired ? 'Expired' : `${diffDays} Days`}
+                           </span>
+                           <span className="text-[10px] font-bold text-brand-textSecondary uppercase">Remaining</span>
+                        </div>
+                      </div>
+                      <div className="w-full">
+                        <div className="w-full bg-brand-black rounded-full h-2 mb-1 overflow-hidden">
+                          <div className={`h-full transition-all duration-500 ${barColor}`} style={{ width: `${progressPercentage}%` }}></div>
+                        </div>
+                        <p className="text-[10px] text-brand-textSecondary text-center">Expires: {member.expirationDate}</p>
+                      </div>
+                    </div>
+
+                    {/* Quick Actions Card */}
+                    <div className="p-5 rounded-2xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[140px] shadow-sm">
+                      <div className="flex justify-between items-start">
+                        <div className="p-2 bg-brand-accent/10 rounded-lg text-brand-accent">
+                          <ArrowDownCircleIcon className="w-6 h-6" />
+                        </div>
+                        <span className="text-[10px] font-bold text-brand-textSecondary uppercase">Quick Actions</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setShowPaymentModal(true)}
+                          className="flex-1 bg-brand-accent text-brand-accentText text-xs font-bold py-2 rounded-lg hover:bg-brand-accentHover transition-colors"
+                        >
+                          Renew
+                        </button>
+                        <button 
+                          onClick={() => setCurrentView('schedule')}
+                          className="flex-1 bg-brand-surface text-brand-textPrimary text-xs font-bold py-2 rounded-lg hover:opacity-80 transition-opacity"
+                        >
+                          Times
+                        </button>
+                      </div>
+                    </div>
                  </div>
-              </>
+
+                 {/* Detailed Stats Row */}
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2 bg-brand-dark border border-brand-border rounded-2xl p-6">
+                       <h3 className="text-sm font-bold text-brand-textSecondary uppercase mb-4 flex items-center gap-2">
+                         <FileTextIcon className="w-4 h-4" /> Subscription Details
+                       </h3>
+                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                          <div>
+                            <p className="text-xs text-brand-textSecondary mb-1">Package</p>
+                            <p className="font-bold text-brand-textPrimary">{member.package || 'Standard'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-brand-textSecondary mb-1">Amount</p>
+                            <p className="font-bold text-brand-textPrimary">₦{member.amount || '0'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-brand-textSecondary mb-1">Start Date</p>
+                            <p className="font-bold text-brand-textPrimary">{member.startDate}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-brand-textSecondary mb-1">Pause Days</p>
+                            <p className="font-bold text-brand-textPrimary">{member.pauseDays || '0'}</p>
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="bg-brand-accent/5 border border-brand-accent/20 rounded-2xl p-6 flex flex-col justify-center items-center text-center">
+                       <DumbbellIcon className="w-10 h-10 text-brand-accent mb-3" />
+                       <h4 className="font-bold text-brand-textPrimary mb-1 text-sm">Need Help?</h4>
+                       <p className="text-xs text-brand-textSecondary mb-4">Contact our team for billing or workout queries.</p>
+                       <a 
+                        href="https://wa.me/2347059969059" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="w-full py-2 bg-brand-accent text-brand-accentText rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-brand-accentHover transition-colors"
+                       >
+                         <PhoneIcon className="w-3 h-3" /> WhatsApp Support
+                       </a>
+                    </div>
+                 </div>
+              </div>
             )}
-            {currentView === 'schedule' && (<div className="bg-brand-dark border border-brand-border rounded-xl p-4 md:p-6 shadow-xl">{renderCalendarHeader()}{scheduleViewMode === 'month' && renderMonthView()}{scheduleViewMode === 'week' && renderWeekView()}{scheduleViewMode === 'day' && renderDayView()}</div>)}
-            {currentView === 'policies' && (<div className="bg-brand-dark p-6 rounded-xl border border-brand-border"><h2 className="text-xl font-bold mb-4">Policies</h2><p className="text-brand-textSecondary">Membership is time-based. Freezing is allowed for long-term plans with notice.</p></div>)}
+            
+            {currentView === 'schedule' && (
+              <div className="bg-brand-dark border border-brand-border rounded-xl p-4 md:p-6 shadow-xl">
+                {renderCalendarHeader()}
+                {scheduleViewMode === 'month' && renderMonthView()}
+                {scheduleViewMode === 'week' && renderWeekView()}
+                {scheduleViewMode === 'day' && renderDayView()}
+              </div>
+            )}
+
+            {currentView === 'policies' && (
+              <div className="bg-brand-dark p-6 rounded-2xl border border-brand-border max-w-2xl mx-auto">
+                <h2 className="text-2xl font-bold mb-6 text-brand-textPrimary">Gym Policies</h2>
+                <div className="space-y-6">
+                  <section>
+                    <h3 className="font-bold text-brand-accent mb-2 uppercase text-sm tracking-wider">Membership Freezing</h3>
+                    <p className="text-brand-textSecondary text-sm leading-relaxed">Membership is time-based. Freezing is allowed for long-term plans (3 months or more) with at least 48 hours notice. Medical freezes require documentation.</p>
+                  </section>
+                  <section>
+                    <h3 className="font-bold text-brand-accent mb-2 uppercase text-sm tracking-wider">Class Punctuality</h3>
+                    <p className="text-brand-textSecondary text-sm leading-relaxed">Please arrive 5-10 minutes before your session. Late arrivals (more than 10 mins) may be asked to skip the session for safety reasons.</p>
+                  </section>
+                  <section>
+                    <h3 className="font-bold text-brand-accent mb-2 uppercase text-sm tracking-wider">Cancellations</h3>
+                    <p className="text-brand-textSecondary text-sm leading-relaxed">Monthly subscriptions are non-refundable once activated. Automatic renewals can be cancelled 5 days before the next billing cycle.</p>
+                  </section>
+                </div>
+              </div>
+            )}
          </div>
       </main>
 
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-brand-dark w-full max-w-md rounded-2xl border border-brand-border p-6 shadow-2xl">
-            <div className="flex justify-between items-center mb-6"><h3 className="font-bold">Renew Membership</h3><button onClick={() => setShowPaymentModal(false)}><XIcon className="w-6 h-6" /></button></div>
-            <div className="bg-brand-accent/10 rounded-xl p-4 mb-6"><h4 className="text-brand-accent font-bold mb-3 text-sm">BANK TRANSFER</h4><div className="space-y-2 text-sm"><div className="flex justify-between"><span>Bank</span><span>Access Bank</span></div><div className="flex justify-between"><span>Account</span><span>0078409920</span></div><div className="flex justify-between"><span>Name</span><span>CrossFit Lagos</span></div></div></div>
-            <a href="https://wa.me/2347059969059" target="_blank" rel="noreferrer" className="block w-full bg-green-600 text-white font-bold py-3 rounded-lg text-center">WhatsApp Receipt</a>
+          <div className="bg-brand-dark w-full max-w-md rounded-2xl border border-brand-border p-6 shadow-2xl animate-scaleIn">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-lg">Renew Membership</h3>
+              <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:text-brand-accent"><XIcon className="w-6 h-6" /></button>
+            </div>
+            
+            <div className="bg-brand-accent/10 rounded-xl p-5 mb-6 border border-brand-accent/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-brand-accent rounded-lg text-brand-accentText">
+                  <CreditCardIcon className="w-5 h-5" />
+                </div>
+                <h4 className="text-brand-accent font-bold text-sm uppercase tracking-wide">BANK TRANSFER</h4>
+              </div>
+              
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center pb-2 border-b border-brand-accent/10">
+                  <span className="text-brand-textSecondary">Bank</span>
+                  <span className="font-bold text-brand-textPrimary">Access Bank</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-brand-accent/10">
+                  <span className="text-brand-textSecondary">Account</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-brand-textPrimary">0078409920</span>
+                    <button onClick={handleCopy} className="text-brand-accent hover:text-brand-accentHover">
+                      {copied ? <CheckCircleIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-brand-textSecondary">Account Name</span>
+                  <span className="font-bold text-brand-textPrimary">CrossFit Lagos</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center space-y-4">
+               <p className="text-xs text-brand-textSecondary px-4">After transfer, please send a screenshot of your receipt to our team via WhatsApp for immediate activation.</p>
+               <a 
+                href="https://wa.me/2347059969059?text=Hello,%20I've%20just%20renewed%20my%20membership%20via%20the%20portal.%20Attached%20is%20my%20receipt." 
+                target="_blank" 
+                rel="noreferrer" 
+                className="flex items-center justify-center gap-2 w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-900/20"
+               >
+                 <PhoneIcon className="w-5 h-5" /> WhatsApp Receipt
+               </a>
+            </div>
           </div>
         </div>
       )}
