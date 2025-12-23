@@ -338,7 +338,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                         <div className="p-2 bg-brand-accent/10 rounded-lg text-brand-accent">
                           <ClockIcon className="w-6 h-6" />
                         </div>
-                        <span className="text-[10px] font-bold text-brand-textSecondary uppercase">Upcoming Session</span>
+                        <span className="text-[10px] font-bold text-brand-textSecondary uppercase">Next Class</span>
                       </div>
                       <div>
                         {nextClassInfo.time ? (
