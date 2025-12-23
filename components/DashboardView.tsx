@@ -317,7 +317,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                     </div>
                  </header>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* Status Card */}
                     <div className={`p-5 rounded-2xl border ${borderColor} ${bgColor} flex flex-col justify-between min-h-[140px] shadow-sm`}>
                       <div className="flex justify-between items-start">
@@ -329,26 +329,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                       <div>
                         <h3 className="font-bold text-lg text-brand-textPrimary leading-tight">{member.firstName} {member.lastName}</h3>
                         <p className="text-brand-textSecondary text-xs">{member.email}</p>
-                      </div>
-                    </div>
-
-                    {/* Next Class Card */}
-                    <div className="p-5 rounded-2xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[140px] shadow-sm">
-                      <div className="flex justify-between items-start">
-                        <div className="p-2 bg-brand-accent/10 rounded-lg text-brand-accent">
-                          <ClockIcon className="w-6 h-6" />
-                        </div>
-                        <span className="text-[10px] font-bold text-brand-textSecondary uppercase">Next Class</span>
-                      </div>
-                      <div>
-                        {nextClassInfo.time ? (
-                          <>
-                            <p className="text-brand-accent font-bold text-sm uppercase">{nextClassInfo.dayName}</p>
-                            <h3 className="text-xl font-bold text-brand-textPrimary">{nextClassInfo.time}</h3>
-                          </>
-                        ) : (
-                          <p className="text-brand-textSecondary text-sm font-medium italic">Check schedule for times</p>
-                        )}
                       </div>
                     </div>
 
@@ -462,11 +442,33 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             )}
 
             {currentView === 'schedule' && (
-              <div className="bg-brand-dark border border-brand-border rounded-xl p-4 md:p-6 shadow-xl">
-                {renderCalendarHeader()}
-                {scheduleViewMode === 'month' && renderMonthView()}
-                {scheduleViewMode === 'week' && renderWeekView()}
-                {scheduleViewMode === 'day' && renderDayView()}
+              <div className="space-y-6">
+                {/* Moved Next Class Card here */}
+                <div className="p-5 rounded-2xl border border-brand-border bg-brand-dark flex flex-col justify-between shadow-lg">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-2 bg-brand-accent/10 rounded-lg text-brand-accent">
+                      <ClockIcon className="w-6 h-6" />
+                    </div>
+                    <span className="text-[10px] font-bold text-brand-textSecondary uppercase">Next Class</span>
+                  </div>
+                  <div>
+                    {nextClassInfo.time ? (
+                      <>
+                        <p className="text-brand-accent font-bold text-sm uppercase">{nextClassInfo.dayName}</p>
+                        <h3 className="text-2xl font-black text-brand-textPrimary">{nextClassInfo.time}</h3>
+                      </>
+                    ) : (
+                      <p className="text-brand-textSecondary text-sm font-medium italic">Check schedule for times</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-brand-dark border border-brand-border rounded-xl p-4 md:p-6 shadow-xl">
+                  {renderCalendarHeader()}
+                  {scheduleViewMode === 'month' && renderMonthView()}
+                  {scheduleViewMode === 'week' && renderWeekView()}
+                  {scheduleViewMode === 'day' && renderDayView()}
+                </div>
               </div>
             )}
 
