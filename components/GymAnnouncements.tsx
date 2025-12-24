@@ -107,11 +107,6 @@ const GymAnnouncements: React.FC = () => {
                 <p className={`text-sm leading-relaxed whitespace-pre-wrap ${isUrgent ? 'text-white/90 font-medium' : 'text-brand-textSecondary'}`}>
                   {announcement.message}
                 </p>
-                {announcement.datePosted && (
-                  <p className={`text-[10px] mt-3 uppercase tracking-widest font-bold opacity-60`}>
-                    Posted: {announcement.datePosted}
-                  </p>
-                )}
               </div>
 
               {!isUrgent && (
