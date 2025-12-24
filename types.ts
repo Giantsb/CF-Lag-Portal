@@ -20,6 +20,13 @@ export interface WodEntry {
   coach_notes?: string;
 }
 
+export interface Announcement {
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'urgent';
+  datePosted: string;
+}
+
 export enum ViewState {
   LOGIN,
   SETUP_PIN,

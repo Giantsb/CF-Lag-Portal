@@ -18,13 +18,13 @@ import {
   ChevronUpIcon,
   FileTextIcon,
   ArrowDownCircleIcon,
-  // Added LockIcon to fix the missing import error
   LockIcon
 } from './Icons';
 import { MemberData } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
 import ThemeToggle from './ThemeToggle';
 import WodContainer from './WodContainer';
+import GymAnnouncements from './GymAnnouncements';
 import { 
   format, addMonths, subMonths, startOfMonth, endOfMonth, 
   startOfWeek, endOfWeek, isSameMonth, addDays, 
@@ -317,104 +317,116 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                     </div>
                  </header>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Status Card */}
-                    <div className={`p-5 rounded-2xl border ${borderColor} ${bgColor} flex flex-col justify-between min-h-[140px] shadow-sm`}>
-                      <div className="flex justify-between items-start">
-                        <div className="p-2 bg-brand-black/20 rounded-lg">
-                          <UserIcon className="w-6 h-6 text-brand-textPrimary" />
-                        </div>
-                        <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full bg-brand-black/20 ${statusColor}`}>{member.status}</span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-lg text-brand-textPrimary leading-tight">{member.firstName} {member.lastName}</h3>
-                        <p className="text-brand-textSecondary text-xs">{member.email}</p>
-                      </div>
-                    </div>
+                 {/* Announcement Section */}
+                 <GymAnnouncements />
 
-                    {/* Expiry Card */}
-                    <div className="p-5 rounded-2xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[140px] shadow-sm">
-                      <div className="flex justify-between items-start">
-                        <div className="p-2 bg-brand-accent/10 rounded-lg text-brand-accent">
-                          <ActivityIcon className="w-6 h-6" />
-                        </div>
-                        <div className="text-right">
-                           <span className={`text-lg font-bold block ${isExpiringSoon ? 'text-yellow-500' : 'text-brand-textPrimary'}`}>
-                             {isExpired ? 'Expired' : `${diffDays} Days`}
-                           </span>
-                           <span className="text-[10px] font-bold text-brand-textSecondary uppercase">Remaining</span>
-                        </div>
+                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* MERGED CARD: Status + Identity + Expiry */}
+                    <div className={`lg:col-span-2 p-6 rounded-3xl border-2 ${borderColor} ${bgColor} flex flex-col justify-between min-h-[180px] shadow-lg relative overflow-hidden transition-all duration-300`}>
+                      {/* Background Decoration */}
+                      <div className="absolute top-0 right-0 p-4 opacity-5">
+                        <UserIcon className="w-32 h-32" />
                       </div>
-                      <div className="w-full">
-                        <div className="w-full bg-brand-black rounded-full h-2 mb-1 overflow-hidden">
-                          <div className={`h-full transition-all duration-500 ${barColor}`} style={{ width: `${progressPercentage}%` }}></div>
+
+                      <div className="flex justify-between items-start relative z-10">
+                        <div className="flex gap-4">
+                          <div className="p-3 bg-brand-black/20 rounded-2xl flex items-center justify-center">
+                            <UserIcon className="w-8 h-8 text-brand-textPrimary" />
+                          </div>
+                          <div>
+                            <h3 className="font-black text-2xl text-brand-textPrimary leading-none">{member.firstName} {member.lastName}</h3>
+                            <p className="text-brand-textSecondary text-xs mt-1 font-medium">{member.email}</p>
+                          </div>
                         </div>
-                        <p className="text-[10px] text-brand-textSecondary text-center">Expires: {member.expirationDate}</p>
+                        <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full bg-brand-black/40 ${statusColor} border border-white/5 tracking-wider`}>
+                          {member.status}
+                        </span>
+                      </div>
+
+                      <div className="my-6 relative z-10">
+                         <div className="flex items-end gap-2">
+                           <span className={`text-4xl font-black ${isExpiringSoon ? 'text-yellow-500' : 'text-brand-textPrimary'}`}>
+                             {isExpired ? 'Expired' : `${diffDays}`}
+                           </span>
+                           {!isExpired && <span className="text-lg font-bold text-brand-textSecondary mb-1.5 uppercase">Days Left</span>}
+                         </div>
+                      </div>
+
+                      <div className="w-full relative z-10">
+                        <div className="flex justify-between items-center mb-2">
+                           <span className="text-[10px] font-bold text-brand-textSecondary uppercase tracking-widest">Membership Progress</span>
+                           <span className="text-[10px] font-bold text-brand-textSecondary uppercase tracking-widest">Expires: {member.expirationDate}</span>
+                        </div>
+                        <div className="w-full bg-brand-black/30 rounded-full h-3 mb-1 overflow-hidden p-0.5 border border-white/5">
+                          <div className={`h-full transition-all duration-700 ease-out rounded-full ${barColor}`} style={{ width: `${progressPercentage}%` }}></div>
+                        </div>
                       </div>
                     </div>
 
                     {/* Quick Actions Card */}
-                    <div className="p-5 rounded-2xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[140px] shadow-sm">
+                    <div className="p-6 rounded-3xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[180px] shadow-md transition-all duration-300 hover:shadow-lg">
                       <div className="flex justify-between items-start">
-                        <div className="p-2 bg-brand-accent/10 rounded-lg text-brand-accent">
-                          <ArrowDownCircleIcon className="w-6 h-6" />
+                        <div className="p-3 bg-brand-accent/10 rounded-2xl text-brand-accent">
+                          <ActivityIcon className="w-8 h-8" />
                         </div>
-                        <span className="text-[10px] font-bold text-brand-textSecondary uppercase">Quick Actions</span>
+                        <span className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest">Shortcuts</span>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="space-y-3 mt-4">
                         <button 
                           onClick={() => setShowPaymentModal(true)}
-                          className="flex-1 bg-brand-accent text-brand-accentText text-xs font-bold py-2 rounded-lg hover:bg-brand-accentHover transition-colors"
+                          className="w-full bg-brand-accent text-brand-accentText text-sm font-black py-3 rounded-2xl hover:bg-brand-accentHover transition-all shadow-md shadow-brand-accent/10 active:scale-[0.98]"
                         >
-                          Renew
+                          RENEW MEMBERSHIP
                         </button>
                         <button 
                           onClick={() => setCurrentView('schedule')}
-                          className="flex-1 bg-brand-surface text-brand-textPrimary text-xs font-bold py-2 rounded-lg hover:opacity-80 transition-opacity"
+                          className="w-full bg-brand-surface text-brand-textPrimary text-sm font-black py-3 rounded-2xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
                         >
-                          Times
+                          VIEW CLASS TIMES
                         </button>
                       </div>
                     </div>
                  </div>
 
                  {/* Detailed Stats Row */}
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2 bg-brand-dark border border-brand-border rounded-2xl p-6">
-                       <h3 className="text-sm font-bold text-brand-textSecondary uppercase mb-4 flex items-center gap-2">
-                         <FileTextIcon className="w-4 h-4" /> Subscription Details
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 bg-brand-dark border border-brand-border rounded-3xl p-6 shadow-sm">
+                       <h3 className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-6 flex items-center gap-2">
+                         <FileTextIcon className="w-4 h-4 text-brand-accent" /> Subscription Data
                        </h3>
-                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
                           <div>
-                            <p className="text-xs text-brand-textSecondary mb-1">Package</p>
-                            <p className="font-bold text-brand-textPrimary">{member.package || 'Standard'}</p>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Package</p>
+                            <p className="font-bold text-brand-textPrimary text-lg">{member.package || 'Standard'}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-brand-textSecondary mb-1">Amount</p>
-                            <p className="font-bold text-brand-textPrimary">₦{member.amount || '0'}</p>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Rate</p>
+                            <p className="font-bold text-brand-textPrimary text-lg">₦{member.amount || '0'}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-brand-textSecondary mb-1">Start Date</p>
-                            <p className="font-bold text-brand-textPrimary">{member.startDate}</p>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Activation</p>
+                            <p className="font-bold text-brand-textPrimary text-lg">{member.startDate}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-brand-textSecondary mb-1">Pause Days</p>
-                            <p className="font-bold text-brand-textPrimary">{member.pauseDays || '0'}</p>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Pause Bal</p>
+                            <p className="font-bold text-brand-textPrimary text-lg">{member.pauseDays || '0'}d</p>
                           </div>
                        </div>
                     </div>
 
-                    <div className="bg-brand-accent/5 border border-brand-accent/20 rounded-2xl p-6 flex flex-col justify-center items-center text-center">
-                       <DumbbellIcon className="w-10 h-10 text-brand-accent mb-3" />
-                       <h4 className="font-bold text-brand-textPrimary mb-1 text-sm">Need Help?</h4>
-                       <p className="text-xs text-brand-textSecondary mb-4">Contact our team for billing or workout queries.</p>
+                    <div className="bg-brand-accent/5 border border-brand-accent/20 rounded-3xl p-6 flex flex-col justify-center items-center text-center group transition-all duration-300 hover:bg-brand-accent/10">
+                       <div className="w-12 h-12 bg-brand-accent rounded-2xl flex items-center justify-center text-brand-accentText mb-4 transform group-hover:rotate-12 transition-transform">
+                          <DumbbellIcon className="w-6 h-6" />
+                       </div>
+                       <h4 className="font-black text-brand-textPrimary mb-2 uppercase text-xs tracking-widest">Concierge Support</h4>
+                       <p className="text-xs text-brand-textSecondary mb-6 font-medium">Billing, workout queries, or account updates.</p>
                        <a 
                         href="https://wa.me/2347059969059" 
                         target="_blank" 
                         rel="noreferrer"
-                        className="w-full py-2 bg-brand-accent text-brand-accentText rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-brand-accentHover transition-colors"
+                        className="w-full py-3 bg-brand-accent text-brand-accentText rounded-2xl text-xs font-black flex items-center justify-center gap-2 hover:bg-brand-accentHover transition-all shadow-lg shadow-brand-accent/5"
                        >
-                         <PhoneIcon className="w-3 h-3" /> WhatsApp Support
+                         <PhoneIcon className="w-3 h-3" /> WHATSAPP TEAM
                        </a>
                     </div>
                  </div>
@@ -444,18 +456,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             {currentView === 'schedule' && (
               <div className="space-y-6">
                 {/* Moved Next Class Card here */}
-                <div className="p-5 rounded-2xl border border-brand-border bg-brand-dark flex flex-col justify-between shadow-lg">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-2 bg-brand-accent/10 rounded-lg text-brand-accent">
+                <div className="p-6 rounded-3xl border border-brand-border bg-brand-dark flex flex-col justify-between shadow-lg">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="p-3 bg-brand-accent/10 rounded-2xl text-brand-accent">
                       <ClockIcon className="w-6 h-6" />
                     </div>
-                    <span className="text-[10px] font-bold text-brand-textSecondary uppercase">Next Class</span>
+                    <span className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest">Next Class</span>
                   </div>
                   <div>
                     {nextClassInfo.time ? (
                       <>
-                        <p className="text-brand-accent font-bold text-sm uppercase">{nextClassInfo.dayName}</p>
-                        <h3 className="text-2xl font-black text-brand-textPrimary">{nextClassInfo.time}</h3>
+                        <p className="text-brand-accent font-black text-sm uppercase tracking-widest mb-1">{nextClassInfo.dayName}</p>
+                        <h3 className="text-4xl font-black text-brand-textPrimary">{nextClassInfo.time}</h3>
                       </>
                     ) : (
                       <p className="text-brand-textSecondary text-sm font-medium italic">Check schedule for times</p>
@@ -463,7 +475,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                   </div>
                 </div>
 
-                <div className="bg-brand-dark border border-brand-border rounded-xl p-4 md:p-6 shadow-xl">
+                <div className="bg-brand-dark border border-brand-border rounded-3xl p-4 md:p-8 shadow-xl">
                   {renderCalendarHeader()}
                   {scheduleViewMode === 'month' && renderMonthView()}
                   {scheduleViewMode === 'week' && renderWeekView()}
@@ -473,19 +485,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             )}
 
             {currentView === 'policies' && (
-              <div className="bg-brand-dark p-6 rounded-2xl border border-brand-border max-w-3xl mx-auto animate-fadeIn">
-                <h2 className="text-2xl font-bold mb-4 text-brand-textPrimary">CrossFit Gym Policies & Terms</h2>
-                <p className="text-brand-textSecondary text-sm leading-relaxed mb-6">
-                  By creating an account or registering a membership, you agree to the policies below. These terms ensure a safe, fair, and consistent training environment for all members.
+              <div className="bg-brand-dark p-8 rounded-3xl border border-brand-border max-w-3xl mx-auto animate-fadeIn shadow-lg">
+                <h2 className="text-3xl font-black mb-4 text-brand-textPrimary tracking-tight">Rules of Engagement</h2>
+                <p className="text-brand-textSecondary text-sm font-medium leading-relaxed mb-8">
+                  By accessing this portal or our facilities, you commit to these standards of safety, fairness, and excellence.
                 </p>
 
-                <div className="border-t border-brand-border pt-4">
+                <div className="border-t border-brand-border pt-6">
                    <button
                       onClick={() => setIsPoliciesExpanded(!isPoliciesExpanded)}
-                      className="w-full flex items-center justify-between p-3 rounded-xl bg-brand-surface hover:bg-brand-accent/10 transition-colors group"
+                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-brand-surface hover:bg-brand-accent/10 transition-all group border border-brand-border"
                    >
-                      <span className="font-bold text-brand-textPrimary">
-                        {isPoliciesExpanded ? "Hide Full Policies" : "View Detailed Terms & Policies"}
+                      <span className="font-black text-xs uppercase tracking-widest text-brand-textPrimary">
+                        {isPoliciesExpanded ? "Collapse Documentation" : "Expand Full Documentation"}
                       </span>
                       {isPoliciesExpanded ? (
                         <ChevronUpIcon className="w-5 h-5 text-brand-accent" />
@@ -495,120 +507,48 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                    </button>
 
                    {isPoliciesExpanded && (
-                      <div className="mt-8 space-y-8 animate-fadeIn">
+                      <div className="mt-10 space-y-10 animate-fadeIn">
                          {/* 1. Membership Overview */}
                          <section>
-                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">1. Membership Overview</h3>
-                            <ul className="space-y-3 text-sm text-brand-textSecondary">
-                               <li className="flex gap-3">
-                                  <span className="text-brand-accent font-bold">•</span>
-                                  <span>All memberships are <strong>time-based</strong>, not attendance-based.</span>
+                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">01. Membership Overview</h3>
+                            <ul className="space-y-4 text-sm text-brand-textSecondary font-medium">
+                               <li className="flex gap-4">
+                                  <span className="text-brand-accent font-bold mt-0.5">•</span>
+                                  <span>Time-Based: Subscriptions are active from the start date regardless of frequency of use.</span>
                                </li>
-                               <li className="flex gap-3">
-                                  <span className="text-brand-accent font-bold">•</span>
-                                  <span>Membership becomes active on the selected start date.</span>
-                               </li>
-                               <li className="flex gap-3">
-                                  <span className="text-brand-accent font-bold">•</span>
-                                  <span>Missed sessions or unused days cannot be refunded, rolled over, or extended.</span>
+                               <li className="flex gap-4">
+                                  <span className="text-brand-accent font-bold mt-0.5">•</span>
+                                  <span>Non-Transferable: Access is strictly linked to your identity.</span>
                                </li>
                             </ul>
                          </section>
 
-                         {/* 2. Membership Freeze Policy */}
+                         {/* 2. Freeze Policy */}
                          <section>
-                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">2. Membership Freeze (Pause) Policy</h3>
-                            <p className="text-sm text-brand-textSecondary mb-4 leading-relaxed">Members may request to pause their membership due to travel, injury, or personal reasons.</p>
-                            
+                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">02. Pause (Freeze) Protocols</h3>
                             <div className="grid md:grid-cols-2 gap-6">
-                               <div className="bg-brand-black/20 p-4 rounded-xl border border-brand-border">
-                                  <h4 className="text-brand-textPrimary font-bold text-xs uppercase mb-3 underline decoration-brand-accent underline-offset-4">Eligibility & Conditions</h4>
-                                  <ul className="space-y-2 text-xs text-brand-textSecondary">
-                                     <li>• Requests must be submitted <strong>before</strong> the planned break.</li>
-                                     <li>• Only <strong>active memberships</strong> may be paused.</li>
-                                     <li>• Pauses extend the membership by the same number of days.</li>
-                                     <li>• Not granted if submitted within <strong>7 days</strong> of expiration.</li>
+                               <div className="bg-brand-black/20 p-5 rounded-2xl border border-brand-border">
+                                  <h4 className="text-brand-textPrimary font-black text-[10px] uppercase mb-4 tracking-widest">Durations Allowed</h4>
+                                  <ul className="space-y-3 text-xs text-brand-textSecondary font-bold">
+                                     <li className="flex justify-between"><span>1 Month Plan</span> <span className="text-brand-accent">14 Days</span></li>
+                                     <li className="flex justify-between"><span>3-6 Month Plans</span> <span className="text-brand-accent">20 Days</span></li>
+                                     <li className="flex justify-between"><span>12 Month Plan</span> <span className="text-brand-accent">25 Days</span></li>
                                   </ul>
                                </div>
-                               <div className="bg-brand-black/20 p-4 rounded-xl border border-brand-border">
-                                  <h4 className="text-brand-textPrimary font-bold text-xs uppercase mb-3 underline decoration-brand-accent underline-offset-4">Allowed Pause Duration</h4>
-                                  <ul className="space-y-2 text-xs text-brand-textSecondary">
-                                     <li>• <strong>Monthly Plans:</strong> Up to 14 days</li>
-                                     <li>• <strong>3- & 6-Month Plans:</strong> 14–20 days</li>
-                                     <li>• <strong>12-Month Plans:</strong> 14–25 days</li>
-                                     <li className="text-[10px] italic mt-2 opacity-70">* Only one pause allowed per cycle.</li>
-                                  </ul>
+                               <div className="p-5 flex items-center">
+                                  <p className="text-xs text-brand-textSecondary italic">Note: Pause requests must be submitted in advance. We do not retroactively pause memberships.</p>
                                </div>
                             </div>
                          </section>
 
                          {/* 3. Refund Policy */}
                          <section>
-                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">3. Refund Policy</h3>
-                            <p className="text-sm text-brand-textSecondary mb-4">The gym maintains a strict no-refund policy. No refunds will be issued for:</p>
-                            <div className="bg-brand-danger/5 border border-brand-danger/20 p-4 rounded-xl mb-4">
-                               <ul className="grid grid-cols-2 gap-2 text-xs text-brand-textSecondary font-medium">
-                                  <li>• Unused days</li>
-                                  <li>• Missed sessions</li>
-                                  <li>• Early cancellation</li>
-                                  <li>• Loss of interest</li>
-                               </ul>
+                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">03. Refund Stance</h3>
+                            <p className="text-sm text-brand-textSecondary font-medium leading-relaxed mb-4">CrossFit Lagos operates a strict no-refund policy to ensure facility maintenance and resource planning.</p>
+                            <div className="bg-brand-danger/10 border border-brand-danger/20 p-5 rounded-2xl">
+                               <p className="text-xs text-brand-danger font-black uppercase tracking-widest">Strictly Non-Refundable:</p>
+                               <p className="text-xs text-brand-textSecondary mt-1">Unused days, early cancellations, and missed group sessions.</p>
                             </div>
-                            <h4 className="text-brand-textPrimary font-bold text-xs uppercase mb-2">Exceptions (Management Review Only)</h4>
-                            <ul className="space-y-2 text-xs text-brand-textSecondary">
-                               <li>• Documented long-term medical conditions.</li>
-                               <li>• Instances where the gym is unable to provide the contracted service.</li>
-                            </ul>
-                         </section>
-
-                         {/* 4. Non-Transferable */}
-                         <section>
-                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-2 pb-1 border-b border-brand-accent/20">4. Non-Transferable Memberships</h3>
-                            <p className="text-sm text-brand-textSecondary">All memberships are personal and cannot be transferred or shared.</p>
-                         </section>
-
-                         {/* 5. Health & Safety */}
-                         <section>
-                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">5. Health & Safety Requirements</h3>
-                            <ul className="space-y-2 text-sm text-brand-textSecondary">
-                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Members must disclose injuries or medical conditions.</span></li>
-                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Follow coaching instructions and train within your limits.</span></li>
-                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Use equipment safely and responsibly.</span></li>
-                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Wear suitable athletic attire and shoes.</span></li>
-                            </ul>
-                         </section>
-
-                         {/* 6. Class Etiquette */}
-                         <section>
-                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">6. Class Etiquette & Conduct</h3>
-                            <ul className="space-y-2 text-sm text-brand-textSecondary">
-                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Arrive on time for classes.</span></li>
-                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Respect coaches and fellow members.</span></li>
-                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>Clean and return equipment after use.</span></li>
-                               <li className="flex gap-3"><span className="text-brand-accent font-bold">!</span><span className="font-medium text-brand-danger/80">Unsafe behavior may lead to membership termination without refund.</span></li>
-                            </ul>
-                         </section>
-
-                         {/* 7. Photography & Media */}
-                         <section>
-                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-2 pb-1 border-b border-brand-accent/20">7. Photography & Media</h3>
-                            <p className="text-sm text-brand-textSecondary leading-relaxed">The gym may capture photos/videos during classes for community or promotional purposes. Members may request exemption by notifying management in writing.</p>
-                         </section>
-
-                         {/* 8. Liability Waiver */}
-                         <section>
-                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-3 pb-1 border-b border-brand-accent/20">8. Liability Waiver</h3>
-                            <ul className="space-y-3 text-sm text-brand-textSecondary">
-                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>You acknowledge that CrossFit training involves physical risk.</span></li>
-                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>You participate voluntarily and assume responsibility for your own safety.</span></li>
-                               <li className="flex gap-3"><span className="text-brand-accent">•</span><span>The gym is not liable for injuries caused by improper form or ignored instructions.</span></li>
-                            </ul>
-                         </section>
-
-                         {/* 9. Agreement */}
-                         <section className="bg-brand-accent/5 p-4 rounded-xl border border-brand-accent/20">
-                            <h3 className="text-brand-accent font-bold uppercase text-xs tracking-widest mb-2">9. Agreement</h3>
-                            <p className="text-sm text-brand-textPrimary font-bold italic">By registering or using the gym facilities, you confirm that you have read and agree to these terms.</p>
                          </section>
                       </div>
                    )}
@@ -620,51 +560,52 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-brand-dark w-full max-w-md rounded-2xl border border-brand-border p-6 shadow-2xl animate-scaleIn">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-lg">Renew Membership</h3>
-              <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:text-brand-accent"><XIcon className="w-6 h-6" /></button>
+          <div className="bg-brand-dark w-full max-w-md rounded-3xl border border-brand-border p-8 shadow-2xl animate-scaleIn">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="font-black text-xl tracking-tight">Renew Membership</h3>
+              <button onClick={() => setShowPaymentModal(false)} className="p-2 bg-brand-surface rounded-full hover:text-brand-accent transition-colors"><XIcon className="w-5 h-5" /></button>
             </div>
             
-            <div className="bg-brand-accent/10 rounded-xl p-5 mb-6 border border-brand-accent/20">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-brand-accent rounded-lg text-brand-accentText">
+            <div className="bg-brand-accent/10 rounded-2xl p-6 mb-8 border border-brand-accent/20">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-brand-accent rounded-xl text-brand-accentText">
                   <CreditCardIcon className="w-5 h-5" />
                 </div>
-                <h4 className="text-brand-accent font-bold text-sm uppercase tracking-wide">BANK TRANSFER</h4>
+                <h4 className="text-brand-accent font-black text-xs uppercase tracking-widest">ELECTRONIC TRANSFER</h4>
               </div>
               
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center pb-2 border-b border-brand-accent/10">
-                  <span className="text-brand-textSecondary">Bank</span>
-                  <span className="font-bold text-brand-textPrimary">Access Bank</span>
+              <div className="space-y-4 text-sm font-bold">
+                <div className="flex justify-between items-center pb-3 border-b border-brand-accent/10">
+                  <span className="text-brand-textSecondary text-[10px] uppercase">Bank</span>
+                  <span className="text-brand-textPrimary">Access Bank</span>
                 </div>
-                <div className="flex justify-between items-center pb-2 border-b border-brand-accent/10">
-                  <span className="text-brand-textSecondary">Account</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-brand-textPrimary">0078409920</span>
-                    <button onClick={handleCopy} className="text-brand-accent hover:text-brand-accentHover">
+                <div className="flex justify-between items-center pb-3 border-b border-brand-accent/10">
+                  <span className="text-brand-textSecondary text-[10px] uppercase">Account</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-brand-textPrimary">0078409920</span>
+                    <button onClick={handleCopy} className="text-brand-accent hover:text-brand-accentHover bg-brand-accent/20 p-1.5 rounded-lg">
                       {copied ? <CheckCircleIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-brand-textSecondary">Account Name</span>
-                  <span className="font-bold text-brand-textPrimary">CrossFit Lagos</span>
+                  <span className="text-brand-textSecondary text-[10px] uppercase">Name</span>
+                  <span className="text-brand-textPrimary">CrossFit Lagos</span>
                 </div>
               </div>
             </div>
 
             <div className="text-center space-y-4">
-               <p className="text-xs text-brand-textSecondary px-4">After transfer, please send a screenshot of your receipt to our team via WhatsApp for immediate activation.</p>
+               <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest px-4">Instant Activation required?</p>
                <a 
                 href="https://wa.me/2347059969059?text=Hello,%20I've%20just%20renewed%20my%20membership%20via%20the%20portal.%20Attached%20is%20my%20receipt." 
                 target="_blank" 
                 rel="noreferrer" 
-                className="flex items-center justify-center gap-2 w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-900/20"
+                className="flex items-center justify-center gap-2 w-full bg-green-600 text-white font-black py-4 rounded-2xl hover:bg-green-700 transition-all shadow-xl shadow-green-900/20 active:scale-[0.98]"
                >
-                 <PhoneIcon className="w-5 h-5" /> WhatsApp Receipt
+                 <PhoneIcon className="w-5 h-5" /> WHATSAPP RECEIPT
                </a>
+               <p className="text-[10px] text-brand-textSecondary/60 italic">Send a screenshot of your transfer for confirmation.</p>
             </div>
           </div>
         </div>
