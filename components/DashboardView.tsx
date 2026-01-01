@@ -408,7 +408,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                             <p className="font-bold text-brand-textPrimary text-lg">{member.startDate}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Subscription Pause (Days)</p>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Pause Days</p>
                             <p className="font-bold text-brand-textPrimary text-lg">{member.pauseDays || '0'}d</p>
                           </div>
                        </div>
