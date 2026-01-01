@@ -354,8 +354,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                       <div className="w-full relative z-10">
                         <div className="flex justify-between items-center mb-2">
-                           <span className="text-[10px] font-bold text-brand-textSecondary uppercase tracking-widest">Subscription</span>
-                           <span className="text-[10px] font-bold text-brand-textSecondary uppercase tracking-widest">Expires: {member.expirationDate}</span>
+                           <span className="text-[10px] font-bold text-brand-textSecondary uppercase tracking-widest">Membership</span>
+                           <span className="text-[10px] font-bold text-brand-textSecondary uppercase tracking-widest">Subscription Expires: {member.expirationDate}</span>
                         </div>
                         <div className="w-full bg-brand-black/30 rounded-full h-3 mb-1 overflow-hidden p-0.5 border border-white/5">
                           <div className={`h-full transition-all duration-700 ease-out rounded-full ${barColor}`} style={{ width: `${progressPercentage}%` }}></div>
