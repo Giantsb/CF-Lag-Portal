@@ -404,11 +404,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                             <p className="font-bold text-brand-textPrimary text-lg">₦{member.amount || '0'}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Activation</p>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Start Date</p>
                             <p className="font-bold text-brand-textPrimary text-lg">{member.startDate}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Pause Bal</p>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Subscription Pause (Days)</p>
                             <p className="font-bold text-brand-textPrimary text-lg">{member.pauseDays || '0'}d</p>
                           </div>
                        </div>
@@ -418,7 +418,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                        <div className="w-12 h-12 bg-brand-accent rounded-2xl flex items-center justify-center text-brand-accentText mb-4 transform group-hover:rotate-12 transition-transform">
                           <DumbbellIcon className="w-6 h-6" />
                        </div>
-                       <h4 className="font-black text-brand-textPrimary mb-2 uppercase text-xs tracking-widest">Concierge Support</h4>
+                       <h4 className="font-black text-brand-textPrimary mb-2 uppercase text-xs tracking-widest">Support</h4>
                        <p className="text-xs text-brand-textSecondary mb-6 font-medium">Billing, workout queries, or account updates.</p>
                        <a 
                         href="https://wa.me/2347059969059" 
@@ -426,7 +426,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                         rel="noreferrer"
                         className="w-full py-3 bg-brand-accent text-brand-accentText rounded-2xl text-xs font-black flex items-center justify-center gap-2 hover:bg-brand-accentHover transition-all shadow-lg shadow-brand-accent/5"
                        >
-                         <PhoneIcon className="w-3 h-3" /> WHATSAPP TEAM
+                         <PhoneIcon className="w-3 h-3" /> SEND WHATSAPP MESSAGE 
                        </a>
                     </div>
                  </div>
