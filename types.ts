@@ -40,3 +40,11 @@ export interface LoginResponse {
   error?: string;
   invalidPin?: boolean;
 }
+
+export type PauseStatus = 'Pending' | 'Approved' | 'Denied' | 'None';
+
+export interface PauseStatusResponse {
+  success: boolean;
+  status: PauseStatus;
+  message?: string;
+}

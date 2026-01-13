@@ -18,13 +18,15 @@ import {
   ChevronUpIcon,
   FileTextIcon,
   ArrowDownCircleIcon,
-  LockIcon
+  LockIcon,
+  PauseCircleIcon
 } from './Icons';
 import { MemberData } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
 import ThemeToggle from './ThemeToggle';
 import WodContainer from './WodContainer';
 import GymAnnouncements from './GymAnnouncements';
+import PauseMembershipForm from './PauseMembershipForm';
 import { 
   format, addMonths, subMonths, startOfMonth, endOfMonth, 
   startOfWeek, endOfWeek, isSameMonth, addDays, 
@@ -62,6 +64,7 @@ const GOOGLE_API_KEY = atob(KEY_PARTS.join(''));
 
 const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPauseModal, setShowPauseModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies' | 'wod'>('dashboard');
@@ -294,6 +297,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             )}
 
             <button onClick={() => { setCurrentView('schedule'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'schedule' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><CalendarIcon className="w-5 h-5" />Schedule</button>
+            <button onClick={() => { setShowPauseModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><PauseCircleIcon className="w-5 h-5" />Pause Membership</button>
             <button onClick={() => { setShowPaymentModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><CreditCardIcon className="w-5 h-5" />Renew</button>
             <button onClick={() => { setCurrentView('policies'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'policies' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><FileTextIcon className="w-5 h-5" />Policies</button>
             <a href="https://wa.me/2347059969059" target="_blank" rel="noreferrer" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><PhoneIcon className="w-5 h-5" />Support</a>
@@ -379,10 +383,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                           RENEW MEMBERSHIP
                         </button>
                         <button 
-                          onClick={() => setCurrentView('schedule')}
+                          onClick={() => setShowPauseModal(true)}
                           className="w-full bg-brand-surface text-brand-textPrimary text-sm font-black py-3 rounded-2xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
                         >
-                          VIEW CLASS TIMES
+                          PAUSE MEMBERSHIP
                         </button>
                       </div>
                     </div>
@@ -408,7 +412,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                             <p className="font-bold text-brand-textPrimary text-lg">{member.startDate}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Pause Days</p>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Pause Bal</p>
                             <p className="font-bold text-brand-textPrimary text-lg">{member.pauseDays || '0'}</p>
                           </div>
                        </div>
@@ -546,8 +550,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                                <h4 className="text-brand-textPrimary font-black text-[10px] uppercase mb-4 tracking-widest">Allowed Pause Duration</h4>
                                <ul className="space-y-3 text-xs text-brand-textSecondary font-bold">
                                   <li className="flex justify-between"><span>Monthly Plans</span> <span className="text-brand-accent">14 Days</span></li>
-                                  <li className="flex justify-between"><span>3- & 6-Month Plans</span> <span className="text-brand-accent">14–20 Days</span></li>
-                                  <li className="flex justify-between"><span>12-Month Plans</span> <span className="text-brand-accent">14–25 Days</span></li>
+                                  <li className="flex justify-between"><span>3 & 6 Month Plans</span> <span className="text-brand-accent">14–20 Days</span></li>
+                                  <li className="flex justify-between"><span>12 Month Plans</span> <span className="text-brand-accent">14–25 Days</span></li>
                                </ul>
                                <p className="text-[10px] text-brand-textSecondary italic mt-4 opacity-70">Note: Only one pause is allowed per membership cycle.</p>
                             </div>
@@ -630,6 +634,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             )}
          </div>
       </main>
+
+      {showPauseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-brand-dark w-full max-w-md rounded-3xl border border-brand-border p-8 shadow-2xl relative overflow-hidden">
+            <PauseMembershipForm member={member} onClose={() => setShowPauseModal(false)} />
+          </div>
+        </div>
+      )}
 
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">

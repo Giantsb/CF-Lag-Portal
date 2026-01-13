@@ -143,7 +143,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
               type="tel"
               value={phone}
               onChange={handlePhoneChange}
-              placeholder="080 1234 5678"
+              placeholder="Enter Phone Number"
               inputMode="tel"
               className="w-full px-4 py-4 bg-brand-input border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none text-brand-textPrimary transition-all placeholder-brand-textSecondary/30 font-medium"
             />
