@@ -23,21 +23,34 @@ const GymAnnouncements: React.FC = () => {
 
     const fetchAnnouncements = async () => {
       if (!WOD_SCRIPT_URL) {
+        console.warn('[Announcements] WOD_SCRIPT_URL is not configured.');
         setLoading(false);
         return;
       }
 
       try {
+        console.log('[Announcements] Fetching from:', `${WOD_SCRIPT_URL}?mode=announcements`);
         const response = await fetch(`${WOD_SCRIPT_URL}?mode=announcements`);
         if (response.ok) {
           const result = await response.json();
-          // The backend script returns the list in the 'announcements' key
-          if (result.success && Array.isArray(result.announcements)) {
-            setAnnouncements(result.announcements);
+          console.log('[Announcements] Response received:', result);
+          
+          if (result.success) {
+            // Check both common data keys for maximum compatibility
+            const dataList = result.announcements || result.data;
+            if (Array.isArray(dataList)) {
+              setAnnouncements(dataList);
+            } else {
+              console.warn('[Announcements] Success but announcements array is missing or not an array:', result);
+            }
+          } else {
+            console.error('[Announcements] Backend error:', result.error || result.message);
           }
+        } else {
+          console.error('[Announcements] HTTP Error:', response.status);
         }
       } catch (err) {
-        console.error('Failed to fetch announcements:', err);
+        console.error('[Announcements] Fetch failed:', err);
       } finally {
         setLoading(false);
       }
@@ -59,7 +72,7 @@ const GymAnnouncements: React.FC = () => {
   if (loading || activeAnnouncements.length === 0) return null;
 
   return (
-    <div className="space-y-4 mb-6">
+    <div className="space-y-4 mb-6 animate-fadeIn">
       {activeAnnouncements.map((announcement, index) => {
         const isUrgent = announcement.type === 'urgent';
         const isWarning = announcement.type === 'warning';
@@ -114,6 +127,7 @@ const GymAnnouncements: React.FC = () => {
                 <button 
                   onClick={() => handleDismiss(announcement.title)}
                   className="absolute top-0 right-0 p-2 text-brand-textSecondary hover:text-brand-textPrimary transition-colors"
+                  aria-label="Dismiss announcement"
                 >
                   <XIcon className="w-5 h-5" />
                 </button>
