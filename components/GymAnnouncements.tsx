@@ -16,7 +16,7 @@ const GymAnnouncements: React.FC = () => {
   const [seenTitles, setSeenTitles] = useState<string[]>([]);
 
   useEffect(() => {
-    // Load dismissed and seen titles from localStorage
+    // Load dismissed and seen titles from localStorage for persistence
     const savedDismissed = localStorage.getItem('gym_dismissed_announcements');
     const savedSeen = localStorage.getItem('gym_seen_announcements');
     
@@ -49,26 +49,17 @@ const GymAnnouncements: React.FC = () => {
         if (response.ok) {
           const result = await response.json();
           
-          if (result.success) {
-            // Priority: result.data.announcements (matches your unified script exactly)
-            let dataList: Announcement[] = [];
-
-            if (result.data && Array.isArray(result.data.announcements)) {
-              dataList = result.data.announcements;
-            } else if (Array.isArray(result.announcements)) {
-              dataList = result.announcements;
-            } else if (Array.isArray(result.data)) {
-              dataList = result.data;
-            }
-
+          if (result.success && result.data && Array.isArray(result.data.announcements)) {
+            const dataList = result.data.announcements;
             setAnnouncements(dataList);
             
-            // Auto-mark as seen after 3 seconds of being on the page
+            // Mark these as "seen" after 5 seconds of being displayed
             setTimeout(() => {
-              const allTitles = dataList.map(a => a.title);
-              const newSeen = Array.from(new Set([...seenTitles, ...allTitles]));
-              setSeenTitles(newSeen);
-              localStorage.setItem('gym_seen_announcements', JSON.stringify(newSeen));
+              const allTitles = dataList.map((a: Announcement) => a.title);
+              const currentSeen = JSON.parse(localStorage.getItem('gym_seen_announcements') || '[]');
+              const updatedSeen = Array.from(new Set([...currentSeen, ...allTitles]));
+              setSeenTitles(updatedSeen);
+              localStorage.setItem('gym_seen_announcements', JSON.stringify(updatedSeen));
             }, 5000);
           }
         }
@@ -101,8 +92,8 @@ const GymAnnouncements: React.FC = () => {
       {activeAnnouncements.map((announcement, index) => {
         const isUrgent = announcement.type === 'urgent';
         const isWarning = announcement.type === 'warning';
-        // Show "NEW" if the backend says so AND we haven't recorded it as seen in previous sessions
-        const isNewBadge = announcement.isNew === true && !seenTitles.includes(announcement.title);
+        // Logic: Show NEW if backend says isNew AND user hasn't seen it in a previous session
+        const showNewBadge = announcement.isNew && !seenTitles.includes(announcement.title);
         
         let bgColor = 'bg-brand-dark';
         let borderColor = 'border-brand-border';
@@ -129,7 +120,6 @@ const GymAnnouncements: React.FC = () => {
             key={index}
             className={`relative p-5 rounded-2xl border ${borderColor} ${bgColor} ${textColor} animate-slideInDown transition-all overflow-hidden group`}
           >
-            {/* Urgent background accent decoration */}
             {isUrgent && (
               <div className="absolute top-0 right-0 p-1 opacity-10 transform translate-x-1/4 -translate-y-1/4">
                 <AlertCircleIcon className="w-24 h-24" />
@@ -146,7 +136,7 @@ const GymAnnouncements: React.FC = () => {
                   <h4 className={`font-black uppercase tracking-tight ${isUrgent ? 'text-white' : 'text-brand-textPrimary'}`}>
                     {announcement.title}
                   </h4>
-                  {isNewBadge && (
+                  {showNewBadge && (
                     <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${isUrgent ? 'bg-white text-brand-danger' : 'bg-brand-accent text-brand-accentText'}`}>
                       NEW
                     </span>

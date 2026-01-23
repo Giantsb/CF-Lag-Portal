@@ -20,6 +20,7 @@ const WodContainer: React.FC = () => {
   const [historyData, setHistoryData] = useState<WodEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRestDay, setIsRestDay] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const fetchData = async (targetMode: WodMode) => {
@@ -30,6 +31,7 @@ const WodContainer: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setIsRestDay(false);
 
     try {
       const response = await fetch(`${WOD_SCRIPT_URL}?mode=${targetMode}`);
@@ -43,7 +45,13 @@ const WodContainer: React.FC = () => {
           setHistoryData(result.data || []);
         }
       } else {
-        setError(result.message || "No WOD data available at the moment.");
+        // Handle "No WOD found" as a rest day rather than a technical error
+        if (targetMode === 'today' && result.message?.includes('No WOD found')) {
+          setTodayData(null);
+          setIsRestDay(true);
+        } else {
+          setError(result.error || result.message || "No WOD data available at the moment.");
+        }
       }
     } catch (err) {
       setError("Unable to connect to workout service. Please try again later.");
@@ -63,7 +71,7 @@ const WodContainer: React.FC = () => {
   const renderToday = () => {
     if (loading) return <LoadingSkeleton />;
     if (error) return <ErrorView message={error} onRetry={() => fetchData('today')} />;
-    if (!todayData) return <RestDayView />;
+    if (isRestDay || !todayData) return <RestDayView />;
 
     return (
       <div className="animate-fadeIn space-y-6">
@@ -197,7 +205,7 @@ const RestDayView = ({ title = "Enjoy Your Rest Day!" }) => (
     </div>
     <h3 className="text-xl font-bold text-brand-textPrimary mb-2">{title}</h3>
     <p className="text-brand-textSecondary text-sm max-w-xs mx-auto">
-      No workout is scheduled for this date. Focus on recovery, mobility, and nutrition.
+      No WOD found for today. Confirm with the class timetable before taking a rest day.
     </p>
   </div>
 );
