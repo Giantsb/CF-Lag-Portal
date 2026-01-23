@@ -31,8 +31,9 @@ const GymAnnouncements: React.FC = () => {
         const response = await fetch(`${WOD_SCRIPT_URL}?mode=announcements`);
         if (response.ok) {
           const result = await response.json();
-          if (result.success && Array.isArray(result.data)) {
-            setAnnouncements(result.data);
+          // The backend script returns the list in the 'announcements' key
+          if (result.success && Array.isArray(result.announcements)) {
+            setAnnouncements(result.announcements);
           }
         }
       } catch (err) {

@@ -25,6 +25,7 @@ export interface Announcement {
   message: string;
   type: 'info' | 'warning' | 'urgent';
   datePosted: string;
+  expiryDate?: string;
 }
 
 export enum ViewState {
