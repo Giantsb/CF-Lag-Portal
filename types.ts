@@ -26,6 +26,7 @@ export interface Announcement {
   type: 'info' | 'warning' | 'urgent';
   datePosted: string;
   expiryDate?: string;
+  isNew?: boolean;
 }
 
 export enum ViewState {

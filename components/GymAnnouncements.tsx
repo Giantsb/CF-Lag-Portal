@@ -18,51 +18,40 @@ const GymAnnouncements: React.FC = () => {
     // Load dismissed titles from localStorage
     const savedDismissed = localStorage.getItem('gym_dismissed_announcements');
     if (savedDismissed) {
-      setDismissedTitles(JSON.parse(savedDismissed));
+      try {
+        setDismissedTitles(JSON.parse(savedDismissed));
+      } catch (e) {
+        console.error('Failed to parse dismissed announcements');
+      }
     }
 
     const fetchAnnouncements = async () => {
       if (!WOD_SCRIPT_URL) {
-        console.warn('[Announcements] WOD_SCRIPT_URL is not configured.');
         setLoading(false);
         return;
       }
 
       try {
         const url = `${WOD_SCRIPT_URL}?mode=announcements`;
-        console.log('[Announcements] Fetching from:', url);
-        
         const response = await fetch(url);
+        
         if (response.ok) {
           const result = await response.json();
-          console.log('[Announcements] Raw response:', result);
           
-          if (result.success || result.announcements || result.data) {
-            // Attempt to find the array in multiple potential locations
-            // 1. result.announcements (Direct)
-            // 2. result.data (Common wrapper)
-            // 3. result.data.announcements (Nested wrapper)
-            let dataList: any = null;
+          if (result.success) {
+            // Target the specific structure from your unified script: result.data.announcements
+            let dataList: Announcement[] = [];
 
-            if (Array.isArray(result.announcements)) {
+            if (result.data && Array.isArray(result.data.announcements)) {
+              dataList = result.data.announcements;
+            } else if (Array.isArray(result.announcements)) {
               dataList = result.announcements;
             } else if (Array.isArray(result.data)) {
               dataList = result.data;
-            } else if (result.data && Array.isArray(result.data.announcements)) {
-              dataList = result.data.announcements;
             }
 
-            if (dataList) {
-              console.log(`[Announcements] Found ${dataList.length} items.`);
-              setAnnouncements(dataList);
-            } else {
-              console.warn('[Announcements] Success but could not find an array in result.announcements, result.data, or result.data.announcements', result);
-            }
-          } else {
-            console.error('[Announcements] Backend reported failure or returned no recognizable data:', result);
+            setAnnouncements(dataList);
           }
-        } else {
-          console.error('[Announcements] HTTP Error:', response.status);
         }
       } catch (err) {
         console.error('[Announcements] Fetch failed:', err);
@@ -85,9 +74,6 @@ const GymAnnouncements: React.FC = () => {
   );
 
   if (loading || activeAnnouncements.length === 0) {
-    if (!loading && announcements.length > 0) {
-        console.log('[Announcements] Data exists but all items are filtered out (Dismissed).');
-    }
     return null;
   }
 
@@ -96,6 +82,7 @@ const GymAnnouncements: React.FC = () => {
       {activeAnnouncements.map((announcement, index) => {
         const isUrgent = announcement.type === 'urgent';
         const isWarning = announcement.type === 'warning';
+        const isNew = announcement.isNew === true;
         
         let bgColor = 'bg-brand-dark';
         let borderColor = 'border-brand-border';
@@ -124,7 +111,7 @@ const GymAnnouncements: React.FC = () => {
           >
             {/* Urgent background accent decoration */}
             {isUrgent && (
-              <div className="absolute top-0 right-0 p-1 opacity-20 transform translate-x-1/4 -translate-y-1/4">
+              <div className="absolute top-0 right-0 p-1 opacity-10 transform translate-x-1/4 -translate-y-1/4">
                 <AlertCircleIcon className="w-24 h-24" />
               </div>
             )}
@@ -135,9 +122,16 @@ const GymAnnouncements: React.FC = () => {
               </div>
 
               <div className="flex-1 pr-6">
-                <h4 className={`font-black uppercase tracking-tight mb-1 ${isUrgent ? 'text-white' : 'text-brand-textPrimary'}`}>
-                  {announcement.title}
-                </h4>
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className={`font-black uppercase tracking-tight ${isUrgent ? 'text-white' : 'text-brand-textPrimary'}`}>
+                    {announcement.title}
+                  </h4>
+                  {isNew && (
+                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${isUrgent ? 'bg-white text-brand-danger' : 'bg-brand-accent text-brand-accentText'}`}>
+                      NEW
+                    </span>
+                  )}
+                </div>
                 <p className={`text-sm leading-relaxed whitespace-pre-wrap ${isUrgent ? 'text-white/90 font-medium' : 'text-brand-textSecondary'}`}>
                   {announcement.message}
                 </p>
