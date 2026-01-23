@@ -13,15 +13,26 @@ const GymAnnouncements: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissedTitles, setDismissedTitles] = useState<string[]>([]);
+  const [seenTitles, setSeenTitles] = useState<string[]>([]);
 
   useEffect(() => {
-    // Load dismissed titles from localStorage
+    // Load dismissed and seen titles from localStorage
     const savedDismissed = localStorage.getItem('gym_dismissed_announcements');
+    const savedSeen = localStorage.getItem('gym_seen_announcements');
+    
     if (savedDismissed) {
       try {
         setDismissedTitles(JSON.parse(savedDismissed));
       } catch (e) {
         console.error('Failed to parse dismissed announcements');
+      }
+    }
+
+    if (savedSeen) {
+      try {
+        setSeenTitles(JSON.parse(savedSeen));
+      } catch (e) {
+        console.error('Failed to parse seen announcements');
       }
     }
 
@@ -39,7 +50,7 @@ const GymAnnouncements: React.FC = () => {
           const result = await response.json();
           
           if (result.success) {
-            // Target the specific structure from your unified script: result.data.announcements
+            // Priority: result.data.announcements (matches your unified script exactly)
             let dataList: Announcement[] = [];
 
             if (result.data && Array.isArray(result.data.announcements)) {
@@ -51,6 +62,14 @@ const GymAnnouncements: React.FC = () => {
             }
 
             setAnnouncements(dataList);
+            
+            // Auto-mark as seen after 3 seconds of being on the page
+            setTimeout(() => {
+              const allTitles = dataList.map(a => a.title);
+              const newSeen = Array.from(new Set([...seenTitles, ...allTitles]));
+              setSeenTitles(newSeen);
+              localStorage.setItem('gym_seen_announcements', JSON.stringify(newSeen));
+            }, 5000);
           }
         }
       } catch (err) {
@@ -82,7 +101,8 @@ const GymAnnouncements: React.FC = () => {
       {activeAnnouncements.map((announcement, index) => {
         const isUrgent = announcement.type === 'urgent';
         const isWarning = announcement.type === 'warning';
-        const isNew = announcement.isNew === true;
+        // Show "NEW" if the backend says so AND we haven't recorded it as seen in previous sessions
+        const isNewBadge = announcement.isNew === true && !seenTitles.includes(announcement.title);
         
         let bgColor = 'bg-brand-dark';
         let borderColor = 'border-brand-border';
@@ -126,7 +146,7 @@ const GymAnnouncements: React.FC = () => {
                   <h4 className={`font-black uppercase tracking-tight ${isUrgent ? 'text-white' : 'text-brand-textPrimary'}`}>
                     {announcement.title}
                   </h4>
-                  {isNew && (
+                  {isNewBadge && (
                     <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${isUrgent ? 'bg-white text-brand-danger' : 'bg-brand-accent text-brand-accentText'}`}>
                       NEW
                     </span>
