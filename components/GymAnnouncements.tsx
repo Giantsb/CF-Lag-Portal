@@ -29,22 +29,37 @@ const GymAnnouncements: React.FC = () => {
       }
 
       try {
-        console.log('[Announcements] Fetching from:', `${WOD_SCRIPT_URL}?mode=announcements`);
-        const response = await fetch(`${WOD_SCRIPT_URL}?mode=announcements`);
+        const url = `${WOD_SCRIPT_URL}?mode=announcements`;
+        console.log('[Announcements] Fetching from:', url);
+        
+        const response = await fetch(url);
         if (response.ok) {
           const result = await response.json();
-          console.log('[Announcements] Response received:', result);
+          console.log('[Announcements] Raw response:', result);
           
-          if (result.success) {
-            // Check both common data keys for maximum compatibility
-            const dataList = result.announcements || result.data;
-            if (Array.isArray(dataList)) {
+          if (result.success || result.announcements || result.data) {
+            // Attempt to find the array in multiple potential locations
+            // 1. result.announcements (Direct)
+            // 2. result.data (Common wrapper)
+            // 3. result.data.announcements (Nested wrapper)
+            let dataList: any = null;
+
+            if (Array.isArray(result.announcements)) {
+              dataList = result.announcements;
+            } else if (Array.isArray(result.data)) {
+              dataList = result.data;
+            } else if (result.data && Array.isArray(result.data.announcements)) {
+              dataList = result.data.announcements;
+            }
+
+            if (dataList) {
+              console.log(`[Announcements] Found ${dataList.length} items.`);
               setAnnouncements(dataList);
             } else {
-              console.warn('[Announcements] Success but announcements array is missing or not an array:', result);
+              console.warn('[Announcements] Success but could not find an array in result.announcements, result.data, or result.data.announcements', result);
             }
           } else {
-            console.error('[Announcements] Backend error:', result.error || result.message);
+            console.error('[Announcements] Backend reported failure or returned no recognizable data:', result);
           }
         } else {
           console.error('[Announcements] HTTP Error:', response.status);
@@ -69,7 +84,12 @@ const GymAnnouncements: React.FC = () => {
     a => a.type === 'urgent' || !dismissedTitles.includes(a.title)
   );
 
-  if (loading || activeAnnouncements.length === 0) return null;
+  if (loading || activeAnnouncements.length === 0) {
+    if (!loading && announcements.length > 0) {
+        console.log('[Announcements] Data exists but all items are filtered out (Dismissed).');
+    }
+    return null;
+  }
 
   return (
     <div className="space-y-4 mb-6 animate-fadeIn">
@@ -102,7 +122,7 @@ const GymAnnouncements: React.FC = () => {
             key={index}
             className={`relative p-5 rounded-2xl border ${borderColor} ${bgColor} ${textColor} animate-slideInDown transition-all overflow-hidden group`}
           >
-            {/* Urgent background accent */}
+            {/* Urgent background accent decoration */}
             {isUrgent && (
               <div className="absolute top-0 right-0 p-1 opacity-20 transform translate-x-1/4 -translate-y-1/4">
                 <AlertCircleIcon className="w-24 h-24" />
@@ -126,10 +146,10 @@ const GymAnnouncements: React.FC = () => {
               {!isUrgent && (
                 <button 
                   onClick={() => handleDismiss(announcement.title)}
-                  className="absolute top-0 right-0 p-2 text-brand-textSecondary hover:text-brand-textPrimary transition-colors"
+                  className="absolute top-2 right-2 p-2 text-brand-textSecondary hover:text-brand-textPrimary transition-colors"
                   aria-label="Dismiss announcement"
                 >
-                  <XIcon className="w-5 h-5" />
+                  <XIcon className="w-4 h-4" />
                 </button>
               )}
             </div>
