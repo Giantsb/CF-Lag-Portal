@@ -1,5 +1,5 @@
 
-import { SCRIPT_URL } from '../constants';
+import { SCRIPT_URL, WOD_SCRIPT_URL } from '../constants';
 import { MemberData, LoginResponse } from '../types';
 
 /**
@@ -175,8 +175,15 @@ export async function getPauseStatus(phone: string): Promise<{ status: string; d
   }
 
   try {
-    // Added mode=pauseStatus to match the Google Apps Script doGet logic
-    const url = `${SCRIPT_URL}?mode=pauseStatus&phone=${encodeURIComponent(phone.trim())}`;
+    // Use WOD_SCRIPT_URL if available, as it contains the pauseStatus logic
+    const targetUrl = WOD_SCRIPT_URL || SCRIPT_URL;
+    
+    // Sending both userId and phone for maximum compatibility with different script versions
+    const encodedPhone = encodeURIComponent(phone.trim());
+    const url = `${targetUrl}?mode=pauseStatus&userId=${encodedPhone}&phone=${encodedPhone}`;
+    
+    console.log(`[MembershipService] Checking pause status for: ${phone}`);
+    
     const response = await fetch(url, {
       method: 'GET',
       redirect: 'follow'
