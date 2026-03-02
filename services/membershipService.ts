@@ -6,6 +6,47 @@ import { MemberData, LoginResponse } from '../types';
  * Common fetch wrapper for Apps Script POST requests.
  */
 async function callAppsScript(payload: any) {
+  // Demo Mode Bypass
+  if (payload.phone === '08000000000') {
+    if (payload.action === 'login') {
+      // Mock successful login for demo
+      return {
+        success: true,
+        member: {
+          firstName: 'Demo',
+          lastName: 'Member',
+          email: 'demo@cflagos.com',
+          phone: '08000000000',
+          package: 'Unlimited Monthly',
+          amount: '50,000',
+          duration: '1 Month',
+          startDate: '2026-02-01',
+          expirationDate: '2026-03-15',
+          status: 'Valid',
+          pauseDays: '0'
+        }
+      };
+    }
+    if (payload.action === 'getMember') {
+      return {
+        success: true,
+        member: {
+          firstName: 'Demo',
+          lastName: 'Member',
+          email: 'demo@cflagos.com',
+          phone: '08000000000',
+          package: 'Unlimited Monthly',
+          amount: '50,000',
+          duration: '1 Month',
+          startDate: '2026-02-01',
+          expirationDate: '2026-03-15',
+          status: 'Valid',
+          pauseDays: '0'
+        }
+      };
+    }
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 35000);
 
@@ -120,5 +161,36 @@ export async function saveNotificationToken(phone: string, token: string): Promi
     return { success: result.success, message: result.message };
   } catch (err: any) {
     return { success: false, message: 'Failed to save token.' };
+  }
+}
+
+/**
+ * Fetches the status of the most recent pause request for a member.
+ * Uses GET request as per the Google Apps Script doGet implementation.
+ */
+export async function getPauseStatus(phone: string): Promise<{ status: string; date?: string }> {
+  // Demo Mode Bypass
+  if (phone === '08000000000') {
+    return { status: 'Pending', date: '2026-03-02' };
+  }
+
+  try {
+    // Added mode=pauseStatus to match the Google Apps Script doGet logic
+    const url = `${SCRIPT_URL}?mode=pauseStatus&phone=${encodeURIComponent(phone.trim())}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow'
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const result = await response.json();
+    return {
+      status: result.status || 'None',
+      date: result.date || ''
+    };
+  } catch (err: any) {
+    console.error('[MembershipService] Failed to fetch pause status:', err.message);
+    return { status: 'Error' };
   }
 }

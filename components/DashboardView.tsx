@@ -21,8 +21,9 @@ import {
   LockIcon,
   PauseCircleIcon
 } from './Icons';
-import { MemberData } from '../types';
+import { MemberData, PauseStatus } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
+import { getPauseStatus } from '../services/membershipService';
 import ThemeToggle from './ThemeToggle';
 import WodContainer from './WodContainer';
 import GymAnnouncements from './GymAnnouncements';
@@ -69,6 +70,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [copied, setCopied] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies' | 'wod'>('dashboard');
   const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
+  const [pauseStatus, setPauseStatus] = useState<string>('Loading...');
+  const [pauseDate, setPauseDate] = useState<string>('');
   
   const [viewDate, setViewDate] = useState(new Date());
   const [scheduleViewMode, setScheduleViewMode] = useState<ViewMode>('month');
@@ -110,6 +113,22 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   useEffect(() => {
     logAnalyticsEvent('portal_view', { page: currentView, status: member.status });
   }, [currentView, member.status]);
+
+  useEffect(() => {
+    const fetchPauseStatus = async () => {
+      try {
+        const result = await getPauseStatus(member.phone);
+        setPauseStatus(result.status);
+        setPauseDate(result.date || '');
+      } catch (err) {
+        setPauseStatus('Error');
+      }
+    };
+    
+    if (currentView === 'dashboard') {
+      fetchPauseStatus();
+    }
+  }, [currentView, member.phone]);
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -342,9 +361,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                             <p className="text-brand-textSecondary text-xs mt-1 font-medium">{member.email}</p>
                           </div>
                         </div>
-                        <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full bg-brand-black/40 ${statusColor} border border-white/5 tracking-wider`}>
-                          {member.status}
-                        </span>
+                        <div className="flex gap-2 items-center">
+                          {pauseStatus !== 'None' && pauseStatus !== 'Loading...' && pauseStatus !== 'Error' && (
+                            <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full bg-brand-black/40 border border-white/5 tracking-wider ${
+                              pauseStatus === 'Approved' ? 'text-brand-success' : 
+                              pauseStatus === 'Denied' ? 'text-brand-danger' : 'text-yellow-500'
+                            }`}>
+                              Pause: {pauseStatus}
+                            </span>
+                          )}
+                          <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full bg-brand-black/40 ${statusColor} border border-white/5 tracking-wider`}>
+                            {member.status}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="my-6 relative z-10">

@@ -10,7 +10,8 @@ import {
   InfoIcon
 } from './Icons';
 import { MemberData, PauseStatus } from '../types';
-import { WOD_SCRIPT_URL } from '../constants';
+import { WOD_SCRIPT_URL, SCRIPT_URL } from '../constants';
+import { getPauseStatus } from '../services/membershipService';
 import { differenceInDays, parseISO, isAfter, isBefore, startOfToday } from 'date-fns';
 
 interface PauseMembershipFormProps {
@@ -41,16 +42,9 @@ const PauseMembershipForm: React.FC<PauseMembershipFormProps> = ({ member, onClo
 
   useEffect(() => {
     const fetchStatus = async () => {
-      if (!WOD_SCRIPT_URL) return;
       try {
-        const phone = member.phone.replace(/[\s\-\(\)]/g, '');
-        const response = await fetch(`${WOD_SCRIPT_URL}?mode=pauseStatus&userId=${phone}`);
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            setStatus(result.status);
-          }
-        }
+        const result = await getPauseStatus(member.phone);
+        setStatus(result.status as PauseStatus);
       } catch (err) {
         console.error('Failed to fetch pause status:', err);
       } finally {
