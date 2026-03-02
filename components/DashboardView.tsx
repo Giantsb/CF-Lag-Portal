@@ -31,7 +31,8 @@ import PauseMembershipForm from './PauseMembershipForm';
 import { 
   format, addMonths, subMonths, startOfMonth, endOfMonth, 
   startOfWeek, endOfWeek, isSameMonth, addDays, 
-  eachDayOfInterval, isToday, subWeeks, addWeeks
+  eachDayOfInterval, isToday, subWeeks, addWeeks,
+  differenceInDays, parseISO
 } from 'date-fns';
 
 interface DashboardViewProps {
@@ -118,8 +119,29 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
     const fetchPauseStatus = async () => {
       try {
         const result = await getPauseStatus(member.phone);
-        setPauseStatus(result.status);
-        setPauseDate(result.date || '');
+        let status = result.status;
+        const dateStr = result.date;
+
+        // Auto-hide Approved/Denied statuses after 7 days to keep dashboard clean
+        if ((status === 'Approved' || status === 'Denied') && dateStr) {
+          try {
+            // Google Sheets dates can be ISO strings or simple date strings
+            const requestDate = dateStr.includes('T') ? parseISO(dateStr) : new Date(dateStr);
+            const today = new Date();
+            
+            // Calculate difference in days
+            const daysSinceRequest = Math.abs(differenceInDays(today, requestDate));
+            
+            if (daysSinceRequest > 7) {
+              status = 'None'; // Hide the badge
+            }
+          } catch (e) {
+            console.error("Error parsing pause date for auto-hide logic:", e);
+          }
+        }
+
+        setPauseStatus(status);
+        setPauseDate(dateStr || '');
       } catch (err) {
         setPauseStatus('Error');
       }
