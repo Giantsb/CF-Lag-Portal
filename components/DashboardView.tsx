@@ -32,7 +32,7 @@ import {
   format, addMonths, subMonths, startOfMonth, endOfMonth, 
   startOfWeek, endOfWeek, isSameMonth, addDays, 
   eachDayOfInterval, isToday, subWeeks, addWeeks,
-  differenceInDays, parseISO
+  differenceInCalendarDays, parseISO, isValid
 } from 'date-fns';
 
 interface DashboardViewProps {
@@ -125,15 +125,24 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
         // Auto-hide Approved/Denied statuses after 7 days to keep dashboard clean
         if ((status === 'Approved' || status === 'Denied') && dateStr) {
           try {
-            // Google Sheets dates can be ISO strings or simple date strings
-            const requestDate = dateStr.includes('T') ? parseISO(dateStr) : new Date(dateStr);
-            const today = new Date();
+            // Handle various date formats from Google Sheets
+            let requestDate: Date;
+            if (dateStr.includes('T')) {
+              requestDate = parseISO(dateStr);
+            } else {
+              // Replace dashes with slashes for better cross-browser support if needed, 
+              // but new Date() usually handles YYYY-MM-DD fine.
+              requestDate = new Date(dateStr);
+            }
             
-            // Calculate difference in days
-            const daysSinceRequest = Math.abs(differenceInDays(today, requestDate));
-            
-            if (daysSinceRequest > 7) {
-              status = 'None'; // Hide the badge
+            if (isValid(requestDate)) {
+              const today = new Date();
+              // Use differenceInCalendarDays for more predictable "day-to-day" comparison
+              const daysSinceRequest = Math.abs(differenceInCalendarDays(today, requestDate));
+              
+              if (daysSinceRequest >= 7) {
+                status = 'None'; // Hide the badge
+              }
             }
           } catch (e) {
             console.error("Error parsing pause date for auto-hide logic:", e);
