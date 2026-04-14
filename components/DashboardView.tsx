@@ -455,6 +455,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
       </div>
 
       <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-brand-dark border-r border-brand-border transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col pt-16 lg:pt-0`}>
+         <div className="px-6 py-8 mb-2 flex flex-col items-center text-center border-b border-brand-border/50 hidden lg:flex">
+            <div className="w-20 h-20 rounded-2xl overflow-hidden bg-brand-black/20 flex items-center justify-center border border-white/10 mb-4 shadow-xl">
+              <img 
+                src={`https://api.dicebear.com/7.x/initials/svg?seed=${member.firstName}%20${member.lastName}&backgroundColor=6366f1,a855f7,ec4899&fontSize=40`} 
+                alt={`${member.firstName} ${member.lastName}`}
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <h4 className="font-bold text-brand-textPrimary leading-tight">{member.firstName} {member.lastName}</h4>
+            <p className="text-[10px] text-brand-textSecondary uppercase tracking-widest mt-1">{member.package}</p>
+         </div>
          <nav className="flex-1 px-4 py-4 space-y-2">
             <button onClick={() => { setCurrentView('dashboard'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><HomeIcon className="w-5 h-5" />Dashboard</button>
             
@@ -478,10 +490,20 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
          <div className="max-w-5xl mx-auto">
             {currentView === 'dashboard' && (
               <div className="space-y-6">
-                 <header className="flex justify-between items-end">
-                    <div>
-                      <h2 className="text-3xl font-bold text-brand-textPrimary">Dashboard</h2>
-                      <p className="text-brand-textSecondary">Welcome back, <span className="text-brand-accent font-bold">{member.firstName}</span></p>
+                 <header className="flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-brand-black/20 flex items-center justify-center border border-white/10 lg:hidden">
+                        <img 
+                          src={`https://api.dicebear.com/7.x/initials/svg?seed=${member.firstName}%20${member.lastName}&backgroundColor=6366f1,a855f7,ec4899&fontSize=40`} 
+                          alt={`${member.firstName} ${member.lastName}`}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div>
+                        <h2 className="text-3xl font-bold text-brand-textPrimary">Dashboard</h2>
+                        <p className="text-brand-textSecondary">Welcome back, <span className="text-brand-accent font-bold">{member.firstName}</span></p>
+                      </div>
                     </div>
                     <div className="hidden md:block">
                       <ThemeToggle />
@@ -501,8 +523,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                       <div className="flex justify-between items-start relative z-10">
                         <div className="flex gap-4">
-                          <div className="p-3 bg-brand-black/20 rounded-2xl flex items-center justify-center">
-                            <UserIcon className="w-8 h-8 text-brand-textPrimary" />
+                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-brand-black/20 flex items-center justify-center border border-white/10">
+                            <img 
+                              src={`https://api.dicebear.com/7.x/initials/svg?seed=${member.firstName}%20${member.lastName}&backgroundColor=6366f1,a855f7,ec4899&fontSize=40`} 
+                              alt={`${member.firstName} ${member.lastName}`}
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
                           </div>
                           <div>
                             <h3 className="font-black text-2xl text-brand-textPrimary leading-none">{member.firstName} {member.lastName}</h3>
