@@ -640,15 +640,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className={`${isHmo ? 'md:col-span-3' : 'md:col-span-2'} bg-brand-dark border border-brand-border rounded-3xl p-6 shadow-sm`}>
                        <h3 className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-6 flex items-center gap-2">
-                         <FileTextIcon className="w-4 h-4 text-brand-accent" /> {isHmo ? 'HMO Plan Details' : 'Subscription Data'}
+                         <FileTextIcon className="w-4 h-4 text-brand-accent" /> {isHmo ? 'HMO Details' : 'Subscription Data'}
                        </h3>
                        <div className={`grid grid-cols-2 ${isHmo ? 'sm:grid-cols-2' : 'sm:grid-cols-4'} gap-8`}>
                           <div>
-                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Package</p>
-                            <p className="font-bold text-brand-textPrimary text-lg">{member.package || 'Standard'}</p>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">{isHmo ? 'HMO Name' : 'Package'}</p>
+                            <p className="font-bold text-brand-textPrimary text-lg">{member.package || (isHmo ? 'N/A' : 'Standard')}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Rate</p>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">{isHmo ? 'HMO ID' : 'Rate'}</p>
                             <p className="font-bold text-brand-textPrimary text-lg">
                               {isHmo ? (member.amount || 'N/A') : `₦${formatAmount(member.amount)}`}
                             </p>
