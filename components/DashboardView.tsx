@@ -77,6 +77,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [viewDate, setViewDate] = useState(new Date());
   const [scheduleViewMode, setScheduleViewMode] = useState<ViewMode>('month');
   const [holidays, setHolidays] = useState<Record<string, string>>({});
+
+  // Detect portal type from session
+  const localSession = localStorage.getItem('hoa_session');
+  const portalType = localSession ? (JSON.parse(localSession).portalType || 'member') : 'member';
+  const isHmo = portalType === 'hmo';
   
   const statusLower = member.status.toLowerCase();
   const isValid = statusLower.includes('valid') || statusLower.includes('active');
@@ -87,23 +92,39 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const bgColor = isValid ? 'bg-green-900/10' : (isExpired ? 'bg-red-900/10' : 'bg-orange-900/10');
 
   const today = new Date();
-  const startDate = new Date(member.startDate);
-  const expDate = new Date(member.expirationDate);
+  
+  // Safe date parsing to handle "N/A" or invalid strings
+  const parseDateSafe = (dateStr: string) => {
+    if (!dateStr || dateStr === 'N/A') return null;
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const startDate = parseDateSafe(member.startDate);
+  const expDate = parseDateSafe(member.expirationDate);
   
   today.setHours(0,0,0,0);
-  startDate.setHours(0,0,0,0);
-  expDate.setHours(0,0,0,0);
-
-  const diffTime = expDate.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  const isExpiringSoon = isValid && !isNaN(diffDays) && diffDays <= 7 && diffDays >= 0;
-
-  const totalDuration = expDate.getTime() - startDate.getTime();
-  const elapsedDuration = today.getTime() - startDate.getTime();
   
+  let diffDays = 0;
+  let hasValidDates = false;
+  
+  if (expDate) {
+    expDate.setHours(0,0,0,0);
+    const diffTime = expDate.getTime() - today.getTime();
+    diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    hasValidDates = true;
+  }
+
+  const isExpiringSoon = isValid && hasValidDates && diffDays <= 7 && diffDays >= 0;
+
   let progressPercentage = 0;
-  if (totalDuration > 0) {
-      progressPercentage = (elapsedDuration / totalDuration) * 100;
+  if (hasValidDates && startDate && expDate) {
+      startDate.setHours(0,0,0,0);
+      const totalDuration = expDate.getTime() - startDate.getTime();
+      const elapsedDuration = today.getTime() - startDate.getTime();
+      if (totalDuration > 0) {
+          progressPercentage = (elapsedDuration / totalDuration) * 100;
+      }
   }
   progressPercentage = Math.min(Math.max(progressPercentage, 0), 100);
 
@@ -112,15 +133,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   else if (isExpiringSoon) barColor = 'bg-yellow-500';
 
   useEffect(() => {
-    logAnalyticsEvent('portal_view', { page: currentView, status: member.status });
-  }, [currentView, member.status]);
+    logAnalyticsEvent('portal_view', { page: currentView, status: member.status, portal: portalType });
+  }, [currentView, member.status, portalType]);
 
   useEffect(() => {
     const fetchPauseStatus = async () => {
+      // Don't bother fetching pause status for HMO users as the feature is disabled
+      if (isHmo) return;
+      
       try {
-        const localSession = localStorage.getItem('hoa_session');
-        const portalType = localSession ? (JSON.parse(localSession).portalType || 'member') : 'member';
-        
         const result = await getPauseStatus(member.phone, portalType);
         let status = result.status;
         const dateStr = result.date;
@@ -479,8 +500,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             )}
 
             <button onClick={() => { setCurrentView('schedule'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'schedule' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><CalendarIcon className="w-5 h-5" />Schedule</button>
-            <button onClick={() => { setShowPauseModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><PauseCircleIcon className="w-5 h-5" />Pause Membership</button>
-            <button onClick={() => { setShowPaymentModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><CreditCardIcon className="w-5 h-5" />Renew</button>
+            
+            {!isHmo && (
+              <>
+                <button onClick={() => { setShowPauseModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><PauseCircleIcon className="w-5 h-5" />Pause Membership</button>
+                <button onClick={() => { setShowPaymentModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><CreditCardIcon className="w-5 h-5" />Renew</button>
+              </>
+            )}
+
             <button onClick={() => { setCurrentView('policies'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'policies' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><FileTextIcon className="w-5 h-5" />Policies</button>
             <a href="https://wa.me/2347059969059" target="_blank" rel="noreferrer" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><PhoneIcon className="w-5 h-5" />Support</a>
          </nav>
@@ -534,9 +561,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                               referrerPolicy="no-referrer"
                             />
                           </div>
-                          <div>
+                          <div className="flex flex-col justify-center">
                             <h3 className="font-black text-2xl text-brand-textPrimary leading-none">{member.firstName} {member.lastName}</h3>
-                            <p className="text-brand-textSecondary text-xs mt-1 font-medium">{member.email}</p>
+                            {member.email && member.email !== 'N/A' && (
+                              <p className="text-brand-textSecondary text-xs mt-1 font-medium">{member.email}</p>
+                            )}
                           </div>
                         </div>
                         <div className="flex gap-2 items-center">
@@ -555,92 +584,109 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                       </div>
 
                       <div className="my-6 relative z-10">
-                         <div className="flex items-end gap-2">
-                           <span className={`text-4xl font-black ${isExpiringSoon ? 'text-yellow-500' : 'text-brand-textPrimary'}`}>
-                             {isExpired ? 'Expired' : `${diffDays}`}
-                           </span>
-                           {!isExpired && <span className="text-lg font-bold text-brand-textSecondary mb-1.5 uppercase">Days Left</span>}
-                         </div>
+                         {hasValidDates ? (
+                           <div className="flex items-end gap-2">
+                             <span className={`text-4xl font-black ${isExpiringSoon ? 'text-yellow-500' : 'text-brand-textPrimary'}`}>
+                               {isExpired ? 'Expired' : `${diffDays}`}
+                             </span>
+                             {!isExpired && <span className="text-lg font-bold text-brand-textSecondary mb-1.5 uppercase">Days Left</span>}
+                           </div>
+                         ) : (
+                           <div className="h-10"></div> 
+                         )}
                       </div>
 
                       <div className="w-full relative z-10">
                         <div className="flex justify-between items-center mb-2">
                            <span className="text-[10px] font-bold text-brand-textSecondary uppercase tracking-widest"></span>
-                           <span className="text-[10px] font-bold text-brand-textSecondary uppercase tracking-widest">Subscription Expires: {member.expirationDate}</span>
+                           {member.expirationDate && member.expirationDate !== 'N/A' && (
+                             <span className="text-[10px] font-bold text-brand-textSecondary uppercase tracking-widest">Subscription Expires: {member.expirationDate}</span>
+                           )}
                         </div>
-                        <div className="w-full bg-brand-black/30 rounded-full h-3 mb-1 overflow-hidden p-0.5 border border-white/5">
-                          <div className={`h-full transition-all duration-700 ease-out rounded-full ${barColor}`} style={{ width: `${progressPercentage}%` }}></div>
-                        </div>
+                        {hasValidDates && (
+                          <div className="w-full bg-brand-black/30 rounded-full h-3 mb-1 overflow-hidden p-0.5 border border-white/5">
+                            <div className={`h-full transition-all duration-700 ease-out rounded-full ${barColor}`} style={{ width: `${progressPercentage}%` }}></div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Quick Actions Card */}
-                    <div className="p-6 rounded-3xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[180px] shadow-md transition-all duration-300 hover:shadow-lg">
-                      <div className="flex justify-between items-start">
-                        <div className="p-3 bg-brand-accent/10 rounded-2xl text-brand-accent">
-                          <ActivityIcon className="w-8 h-8" />
+                    {!isHmo && (
+                      <div className="p-6 rounded-3xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[180px] shadow-md transition-all duration-300 hover:shadow-lg">
+                        <div className="flex justify-between items-start">
+                          <div className="p-3 bg-brand-accent/10 rounded-2xl text-brand-accent">
+                            <ActivityIcon className="w-8 h-8" />
+                          </div>
+                          <span className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest">Shortcuts</span>
                         </div>
-                        <span className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest">Shortcuts</span>
+                        <div className="space-y-3 mt-4">
+                          <button 
+                            onClick={() => setShowPaymentModal(true)}
+                            className="w-full bg-brand-accent text-brand-accentText text-sm font-black py-3 rounded-2xl hover:bg-brand-accentHover transition-all shadow-md shadow-brand-accent/10 active:scale-[0.98]"
+                          >
+                            RENEW MEMBERSHIP
+                          </button>
+                          <button 
+                            onClick={() => setShowPauseModal(true)}
+                            className="w-full bg-brand-surface text-brand-textPrimary text-sm font-black py-3 rounded-2xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
+                          >
+                            PAUSE MEMBERSHIP
+                          </button>
+                        </div>
                       </div>
-                      <div className="space-y-3 mt-4">
-                        <button 
-                          onClick={() => setShowPaymentModal(true)}
-                          className="w-full bg-brand-accent text-brand-accentText text-sm font-black py-3 rounded-2xl hover:bg-brand-accentHover transition-all shadow-md shadow-brand-accent/10 active:scale-[0.98]"
-                        >
-                          RENEW MEMBERSHIP
-                        </button>
-                        <button 
-                          onClick={() => setShowPauseModal(true)}
-                          className="w-full bg-brand-surface text-brand-textPrimary text-sm font-black py-3 rounded-2xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
-                        >
-                          PAUSE MEMBERSHIP
-                        </button>
-                      </div>
-                    </div>
+                    )}
                  </div>
 
-                 {/* Detailed Stats Row */}
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 bg-brand-dark border border-brand-border rounded-3xl p-6 shadow-sm">
+                    <div className={`${isHmo ? 'md:col-span-3' : 'md:col-span-2'} bg-brand-dark border border-brand-border rounded-3xl p-6 shadow-sm`}>
                        <h3 className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-6 flex items-center gap-2">
-                         <FileTextIcon className="w-4 h-4 text-brand-accent" /> Subscription Data
+                         <FileTextIcon className="w-4 h-4 text-brand-accent" /> {isHmo ? 'HMO Plan Details' : 'Subscription Data'}
                        </h3>
-                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+                       <div className={`grid grid-cols-2 ${isHmo ? 'sm:grid-cols-2' : 'sm:grid-cols-4'} gap-8`}>
                           <div>
                             <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Package</p>
                             <p className="font-bold text-brand-textPrimary text-lg">{member.package || 'Standard'}</p>
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Rate</p>
-                            <p className="font-bold text-brand-textPrimary text-lg">₦{formatAmount(member.amount)}</p>
+                            <p className="font-bold text-brand-textPrimary text-lg">
+                              {isHmo ? (member.amount || 'N/A') : `₦${formatAmount(member.amount)}`}
+                            </p>
                           </div>
-                          <div>
-                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Start Date</p>
-                            <p className="font-bold text-brand-textPrimary text-lg">{member.startDate}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Pause Days</p>
-                            <p className="font-bold text-brand-textPrimary text-lg">{member.pauseDays || '0'}</p>
-                          </div>
+                          {!isHmo && member.startDate !== 'N/A' && (
+                            <div>
+                              <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Start Date</p>
+                              <p className="font-bold text-brand-textPrimary text-lg">{member.startDate}</p>
+                            </div>
+                          )}
+                          {!isHmo && (
+                            <div>
+                              <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Pause Days</p>
+                              <p className="font-bold text-brand-textPrimary text-lg">{member.pauseDays || '0'}</p>
+                            </div>
+                          )}
                        </div>
                     </div>
 
-                    <div className="bg-brand-accent/5 border border-brand-accent/20 rounded-3xl p-6 flex flex-col justify-center items-center text-center group transition-all duration-300 hover:bg-brand-accent/10">
-                       <div className="w-12 h-12 bg-brand-accent rounded-2xl flex items-center justify-center text-brand-accentText mb-4 transform group-hover:rotate-12 transition-transform">
-                          <DumbbellIcon className="w-6 h-6" />
-                       </div>
-                       <h4 className="font-black text-brand-textPrimary mb-2 uppercase text-xs tracking-widest">Support</h4>
-                       <p className="text-xs text-brand-textSecondary mb-6 font-medium">Billing, workout queries, or account updates.</p>
-                       <a 
-                        href="https://wa.me/2347059969059" 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="w-full py-3 bg-brand-accent text-brand-accentText rounded-2xl text-xs font-black flex items-center justify-center gap-2 hover:bg-brand-accentHover transition-all shadow-lg shadow-brand-accent/5"
-                       >
-                         <PhoneIcon className="w-3 h-3" /> SEND WHATSAPP MESSAGE 
-                       </a>
-                    </div>
+                    {!isHmo && (
+                      <div className="bg-brand-accent/5 border border-brand-accent/20 rounded-3xl p-6 flex flex-col justify-center items-center text-center group transition-all duration-300 hover:bg-brand-accent/10">
+                        <div className="w-12 h-12 bg-brand-accent rounded-2xl flex items-center justify-center text-brand-accentText mb-4 transform group-hover:rotate-12 transition-transform">
+                            <DumbbellIcon className="w-6 h-6" />
+                        </div>
+                        <h4 className="font-black text-brand-textPrimary mb-2 uppercase text-xs tracking-widest">Support</h4>
+                        <p className="text-xs text-brand-textSecondary mb-6 font-medium">Billing, workout queries, or account updates.</p>
+                        <a 
+                          href="https://wa.me/2347059969059" 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="w-full py-3 bg-brand-accent text-brand-accentText rounded-2xl text-xs font-black flex items-center justify-center gap-2 hover:bg-brand-accentHover transition-all shadow-lg shadow-brand-accent/5"
+                        >
+                          <PhoneIcon className="w-3 h-3" /> SEND WHATSAPP MESSAGE 
+                        </a>
+                      </div>
+                    )}
                  </div>
+
               </div>
             )}
             
