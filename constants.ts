@@ -33,3 +33,6 @@ export const SCRIPT_URL = String(rawScriptUrl).trim();
 
 // WOD Script URL from environment variable
 export const WOD_SCRIPT_URL = (env.VITE_WOD_INAPP_MESSAGING_SCRIPT_URL || '').trim();
+
+// HMO Script URL from environment variable
+export const HMO_SCRIPT_URL = (env.VITE_HMO_PORTAL_ACCESS_SCRIPT_URL || '').trim();

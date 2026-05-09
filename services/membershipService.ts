@@ -1,11 +1,14 @@
 
-import { SCRIPT_URL, WOD_SCRIPT_URL } from '../constants';
+import { SCRIPT_URL, WOD_SCRIPT_URL, HMO_SCRIPT_URL } from '../constants';
 import { MemberData, LoginResponse } from '../types';
 
 /**
  * Common fetch wrapper for Apps Script POST requests.
  */
-async function callAppsScript(payload: any) {
+async function callAppsScript(payload: any, portalType: 'member' | 'hmo' = 'member') {
+  // Select target URL based on portal type
+  const targetUrl = portalType === 'hmo' ? HMO_SCRIPT_URL : SCRIPT_URL;
+
   // Demo Mode Bypass
   if (payload.phone === '08000000000') {
     if (payload.action === 'login') {
@@ -17,25 +20,7 @@ async function callAppsScript(payload: any) {
           lastName: 'Member',
           email: 'demo@cflagos.com',
           phone: '08000000000',
-          package: 'Unlimited Monthly',
-          amount: '50,000',
-          duration: '1 Month',
-          startDate: '2026-02-01',
-          expirationDate: '2026-03-15',
-          status: 'Valid',
-          pauseDays: '0'
-        }
-      };
-    }
-    if (payload.action === 'getMember') {
-      return {
-        success: true,
-        member: {
-          firstName: 'Demo',
-          lastName: 'Member',
-          email: 'demo@cflagos.com',
-          phone: '08000000000',
-          package: 'Unlimited Monthly',
+          package: portalType === 'hmo' ? 'HMO Plan' : 'Unlimited Monthly',
           amount: '50,000',
           duration: '1 Month',
           startDate: '2026-02-01',
@@ -51,10 +36,13 @@ async function callAppsScript(payload: any) {
   const timeoutId = setTimeout(() => controller.abort(), 35000);
 
   try {
-    const urlPreview = `${SCRIPT_URL.substring(0, 15)}...${SCRIPT_URL.substring(SCRIPT_URL.length - 10)}`;
-    console.log(`[MembershipService] Action: ${payload.action} | Phone: ${payload.phone}`);
+    console.log(`[MembershipService] Action: ${payload.action} | Phone: ${payload.phone} | Portal: ${portalType}`);
     
-    const response = await fetch(SCRIPT_URL, {
+    if (!targetUrl) {
+      throw new Error(`${portalType === 'hmo' ? 'HMO' : 'Member'} portal script URL is not configured.`);
+    }
+
+    const response = await fetch(targetUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload),
@@ -85,10 +73,10 @@ async function callAppsScript(payload: any) {
  * Verifies if a phone number exists.
  * We use 'getMember' as a fail-safe because it exists in all backend versions.
  */
-export async function verifyPhoneExists(phone: string): Promise<{ success: boolean; error?: string }> {
+export async function verifyPhoneExists(phone: string, portalType: 'member' | 'hmo' = 'member'): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log('[MembershipService] Verifying phone using "getMember" action...');
-    const result = await callAppsScript({ action: 'getMember', phone: phone.trim() });
+    console.log(`[MembershipService] Verifying phone using "getMember" on ${portalType} portal...`);
+    const result = await callAppsScript({ action: 'getMember', phone: phone.trim() }, portalType);
     
     // If getMember succeeds, the member exists in the sheet
     if (result.success === true) {
@@ -104,13 +92,13 @@ export async function verifyPhoneExists(phone: string): Promise<{ success: boole
   }
 }
 
-export async function loginMember(phone: string, hashedPin: string): Promise<LoginResponse> {
+export async function loginMember(phone: string, hashedPin: string, portalType: 'member' | 'hmo' = 'member'): Promise<LoginResponse> {
   try {
     const result = await callAppsScript({
       action: 'login',
       phone: phone.trim(),
       hashedPin: hashedPin
-    });
+    }, portalType);
 
     if (result.success) {
       if (result.invalidPin) return { success: false, error: 'Invalid PIN. Please try again.', invalidPin: true };
@@ -129,35 +117,35 @@ export async function loginMember(phone: string, hashedPin: string): Promise<Log
   }
 }
 
-export async function createPin(phone: string, hashedPin: string): Promise<{ success: boolean; message?: string; data?: any }> {
+export async function createPin(phone: string, hashedPin: string, portalType: 'member' | 'hmo' = 'member'): Promise<{ success: boolean; message?: string; data?: any }> {
   try {
     const result = await callAppsScript({
       action: 'setupPin',
       phone: phone.trim(),
       hashedPin: hashedPin
-    });
+    }, portalType);
     return { success: result.success, message: result.message, data: result.data };
   } catch (err: any) {
     return { success: false, message: err.message || 'Failed to update PIN.' };
   }
 }
 
-export async function getMemberByPhone(phone: string): Promise<MemberData | null> {
+export async function getMemberByPhone(phone: string, portalType: 'member' | 'hmo' = 'member'): Promise<MemberData | null> {
   try {
-    const result = await callAppsScript({ action: 'getMember', phone: phone.trim() });
+    const result = await callAppsScript({ action: 'getMember', phone: phone.trim() }, portalType);
     return (result.success && result.member) ? result.member : null;
   } catch (err: any) {
     return null;
   }
 }
 
-export async function saveNotificationToken(phone: string, token: string): Promise<{ success: boolean; message?: string }> {
+export async function saveNotificationToken(phone: string, token: string, portalType: 'member' | 'hmo' = 'member'): Promise<{ success: boolean; message?: string }> {
   try {
     const result = await callAppsScript({
       action: 'saveNotificationToken',
       phone: phone.trim(),
       token: token
-    });
+    }, portalType);
     return { success: result.success, message: result.message };
   } catch (err: any) {
     return { success: false, message: 'Failed to save token.' };
@@ -168,16 +156,22 @@ export async function saveNotificationToken(phone: string, token: string): Promi
  * Fetches the status of the most recent pause request for a member.
  * Uses GET request as per the Google Apps Script doGet implementation.
  */
-export async function getPauseStatus(phone: string): Promise<{ status: string; date?: string }> {
+export async function getPauseStatus(phone: string, portalType: 'member' | 'hmo' = 'member'): Promise<{ status: string; date?: string }> {
   // Demo Mode Bypass
   if (phone === '08000000000') {
     return { status: 'Pending', date: '2026-03-02' };
   }
 
   try {
-    // Use WOD_SCRIPT_URL if available, as it contains the pauseStatus logic
-    const targetUrl = WOD_SCRIPT_URL || SCRIPT_URL;
+    // Select base script URL based on portal type
+    const baseScriptUrl = portalType === 'hmo' ? HMO_SCRIPT_URL : SCRIPT_URL;
     
+    // Use WOD_SCRIPT_URL if available for members, as it often contains the unified logic
+    // For HMO, we strictly use HMO_SCRIPT_URL
+    const targetUrl = portalType === 'hmo' ? HMO_SCRIPT_URL : (WOD_SCRIPT_URL || baseScriptUrl);
+    
+    if (!targetUrl) return { status: 'None' };
+
     // Sending both userId and phone for maximum compatibility with different script versions
     const encodedPhone = encodeURIComponent(phone.trim());
     const url = `${targetUrl}?mode=pauseStatus&userId=${encodedPhone}&phone=${encodedPhone}`;

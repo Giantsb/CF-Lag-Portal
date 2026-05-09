@@ -23,6 +23,9 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Retrieve portal type from temporary local storage
+  const portalType = (localStorage.getItem('hoa_portal_type') as 'member' | 'hmo') || 'member';
+
   const handleSetupPin = async () => {
     setError('');
     setSuccess('');
@@ -42,20 +45,21 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
 
     try {
       // 2. Hash PIN
-      console.log(`[PinSetup] Hashing PIN for phone: ${phone}`);
+      console.log(`[PinSetup] Hashing PIN for phone: ${phone} (Portal: ${portalType})`);
       const hashedPin = hashPin(newPin, phone);
       console.log(`[PinSetup] Hash generated: ${hashedPin.substring(0, 10)}...`);
 
       // 3. Save to Google Sheets via createPin()
       console.log(`[PinSetup] Saving PIN to Google Sheets...`);
-      const result = await createPin(phone, hashedPin);
+      const result = await createPin(phone, hashedPin, portalType);
 
       if (result.success) {
         console.log(`[PinSetup] Success: PIN ${isReset ? 'reset' : 'setup'} completed in backend.`);
         
         // Log Analytics Event
         logAnalyticsEvent(isReset ? 'pin_reset_success' : 'pin_setup_success', { 
-          phone_hash: hashedPin.substring(0, 8) 
+          phone_hash: hashedPin.substring(0, 8),
+          portal: portalType
         });
 
         // 4. Show success message
@@ -66,7 +70,7 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
 
         // 5. Auto-login via getMemberByPhone()
         console.log(`[PinSetup] Attempting auto-login for: ${phone}`);
-        const member = await getMemberByPhone(phone);
+        const member = await getMemberByPhone(phone, portalType);
 
         if (member) {
           console.log(`[PinSetup] Auto-login successful for ${member.firstName}`);

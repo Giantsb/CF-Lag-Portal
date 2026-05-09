@@ -118,7 +118,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   useEffect(() => {
     const fetchPauseStatus = async () => {
       try {
-        const result = await getPauseStatus(member.phone);
+        const localSession = localStorage.getItem('hoa_session');
+        const portalType = localSession ? (JSON.parse(localSession).portalType || 'member') : 'member';
+        
+        const result = await getPauseStatus(member.phone, portalType);
         let status = result.status;
         const dateStr = result.date;
 

@@ -29,8 +29,9 @@ function App() {
        if (localSession) {
           try {
              const session = JSON.parse(localSession);
+             const portalType = session.portalType || 'member';
              if (session.expiry > new Date().getTime()) {
-                const member = await getMemberByPhone(session.phone);
+                const member = await getMemberByPhone(session.phone, portalType);
                 if (member) {
                    setMemberData(member);
                    setViewState(ViewState.DASHBOARD);
@@ -50,21 +51,29 @@ function App() {
     checkSession();
   }, []);
 
-  const handleLoginSuccess = (data: MemberData) => {
+  const handleLoginSuccess = (data: MemberData, portalType: 'member' | 'hmo' = 'member') => {
+    localStorage.setItem('hoa_session', JSON.stringify({
+       phone: data.phone.replace(/[\s\-\(\)]/g, ''),
+       portalType: portalType,
+       expiry: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
+    }));
     setMemberData(data);
     setViewState(ViewState.DASHBOARD);
   };
 
-  const handleRequireSetup = (phone: string) => {
+  const handleRequireSetup = (phone: string, portalType: 'member' | 'hmo' = 'member') => {
     setSetupPhone(phone);
     setIsResetMode(false);
     setViewState(ViewState.SETUP_PIN);
+    // We could pass portalType to state if needed for PinSetupView
+    localStorage.setItem('hoa_portal_type', portalType);
   };
 
-  const handleResetPin = (phone: string) => {
+  const handleResetPin = (phone: string, portalType: 'member' | 'hmo' = 'member') => {
     setSetupPhone(phone);
     setIsResetMode(true);
     setViewState(ViewState.SETUP_PIN);
+    localStorage.setItem('hoa_portal_type', portalType);
   };
 
   const handleLogout = () => {
@@ -76,6 +85,8 @@ function App() {
   };
 
   const handleSetupSuccess = (member: MemberData) => {
+    const portalType = localStorage.getItem('hoa_portal_type') || 'member';
+    
     setMemberData(member);
     setViewState(ViewState.DASHBOARD);
     setSetupPhone('');
@@ -83,8 +94,12 @@ function App() {
     
     localStorage.setItem('hoa_session', JSON.stringify({
        phone: member.phone.replace(/[\s\-\(\)]/g, ''),
+       portalType: portalType,
        expiry: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
     }));
+    
+    // Clean up temporary portal type
+    localStorage.removeItem('hoa_portal_type');
   };
 
   const handleSetupBack = () => {

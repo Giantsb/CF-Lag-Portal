@@ -8,12 +8,13 @@ import { MemberData } from '../types';
 import ThemeToggle from './ThemeToggle';
 
 interface LoginViewProps {
-  onSuccess: (member: MemberData) => void;
-  onRequireSetup: (phone: string) => void;
-  onResetPin: (phone: string) => void;
+  onSuccess: (member: MemberData, portalType: 'member' | 'hmo') => void;
+  onRequireSetup: (phone: string, portalType: 'member' | 'hmo') => void;
+  onResetPin: (phone: string, portalType: 'member' | 'hmo') => void;
 }
 
 const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onResetPin }) => {
+  const [portalType, setPortalType] = useState<'member' | 'hmo'>('member');
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
@@ -42,17 +43,17 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
       try {
         // We use a dummy PIN hash to trigger the backend check
         const dummyHash = hashPin('0000', phone);
-        const result = await loginMember(phone, dummyHash);
+        const result = await loginMember(phone, dummyHash, portalType);
         
         if (result.needsSetup) {
-          logAnalyticsEvent('auto_redirect_setup', { phone });
-          onRequireSetup(phone);
+          logAnalyticsEvent('auto_redirect_setup', { phone, portal: portalType });
+          onRequireSetup(phone, portalType);
           return;
         }
         
         if (result.success && result.member) {
           // Rare case: user actually has 0000 as PIN
-          onSuccess(result.member);
+          onSuccess(result.member, portalType);
           return;
         }
 
@@ -74,18 +75,19 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
     setLoading(true);
     try {
       const hashedPin = hashPin(pin, phone);
-      const result = await loginMember(phone, hashedPin);
+      const result = await loginMember(phone, hashedPin, portalType);
       
       if (result.success && result.member) {
         localStorage.setItem('hoa_session', JSON.stringify({
            phone: phone,
+           portalType: portalType,
            expiry: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
         }));
         
-        logAnalyticsEvent('user_login_success', { method: 'portal' });
-        onSuccess(result.member);
+        logAnalyticsEvent('user_login_success', { method: 'portal', portal: portalType });
+        onSuccess(result.member, portalType);
       } else if (result.needsSetup) {
-        onRequireSetup(phone);
+        onRequireSetup(phone, portalType);
       } else {
         setError(result.error || 'Invalid credentials. Please try again.');
       }
@@ -105,9 +107,9 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
     
     setLoading(true);
     try {
-      const result = await verifyPhoneExists(phone);
+      const result = await verifyPhoneExists(phone, portalType);
       if (result.success) {
-        onResetPin(phone);
+        onResetPin(phone, portalType);
       } else {
         setError(result.error || 'Phone number not found in our records.');
       }
@@ -131,7 +133,28 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
           </div>
           <h1 className="text-3xl font-bold text-brand-textPrimary mb-1">CrossFit Lagos</h1>
           <p className="text-brand-accent font-bold text-sm tracking-widest uppercase mb-4 opacity-80">Membership Portal</p>
-          <p className="text-brand-textSecondary text-sm px-6">Access your subscription, schedule, and renewal status.</p>
+          
+          {/* Portal Switcher */}
+          <div className="flex bg-brand-black/40 p-1 rounded-xl border border-brand-border/50 mb-6 mx-4">
+            <button
+              onClick={() => setPortalType('member')}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${portalType === 'member' ? 'bg-brand-accent text-brand-accentText shadow-lg' : 'text-brand-textSecondary hover:text-brand-textPrimary'}`}
+            >
+              Member Login
+            </button>
+            <button
+              onClick={() => setPortalType('hmo')}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${portalType === 'hmo' ? 'bg-brand-accent text-brand-accentText shadow-lg' : 'text-brand-textSecondary hover:text-brand-textPrimary'}`}
+            >
+              HMO Login
+            </button>
+          </div>
+
+          <p className="text-brand-textSecondary text-sm px-6">
+            {portalType === 'member' 
+              ? 'Access your subscription, schedule, and renewal status.' 
+              : 'Sign in with your HMO details to access membership resources.'}
+          </p>
         </div>
 
         <div className="space-y-5">
