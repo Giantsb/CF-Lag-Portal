@@ -232,7 +232,7 @@ const PauseMembershipForm: React.FC<PauseMembershipFormProps> = ({ member, onClo
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full bg-brand-input border border-brand-border rounded-xl px-4 py-3 text-sm text-brand-textPrimary focus:ring-2 focus:ring-brand-accent outline-none transition-all"
               />
-              <p className="text-[10px] text-brand-textSecondary mt-1 ml-1">Used for automated approval/denial notifications.</p>
+              <p className="text-[10px] text-brand-textSecondary mt-1 ml-1">Used for approval/denial notifications.</p>
             </div>
 
             <div>
