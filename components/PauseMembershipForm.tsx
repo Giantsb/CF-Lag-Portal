@@ -32,7 +32,8 @@ const PauseMembershipForm: React.FC<PauseMembershipFormProps> = ({ member, onClo
   const [formData, setFormData] = useState({
     start: '',
     end: '',
-    reason: 'Travel'
+    reason: 'Travel',
+    email: (member.email && member.email !== 'N/A') ? member.email : ''
   });
 
   const today = startOfToday();
@@ -64,6 +65,11 @@ const PauseMembershipForm: React.FC<PauseMembershipFormProps> = ({ member, onClo
       return;
     }
 
+    if (!formData.email) {
+      setError('Please provide your email address for notifications.');
+      return;
+    }
+
     const startDate = parseISO(formData.start);
     const endDate = parseISO(formData.end);
 
@@ -89,6 +95,7 @@ const PauseMembershipForm: React.FC<PauseMembershipFormProps> = ({ member, onClo
           mode: 'pauseRequest',
           userId: phone,
           name: `${member.firstName} ${member.lastName}`,
+          email: formData.email,
           start: formData.start,
           end: formData.end,
           reason: formData.reason
@@ -211,6 +218,21 @@ const PauseMembershipForm: React.FC<PauseMembershipFormProps> = ({ member, onClo
                   />
                 </div>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2 ml-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="email@example.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full bg-brand-input border border-brand-border rounded-xl px-4 py-3 text-sm text-brand-textPrimary focus:ring-2 focus:ring-brand-accent outline-none transition-all"
+              />
+              <p className="text-[10px] text-brand-textSecondary mt-1 ml-1">Used for automated approval/denial notifications.</p>
             </div>
 
             <div>
