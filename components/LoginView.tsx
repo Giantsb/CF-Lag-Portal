@@ -153,7 +153,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
           <p className="text-brand-textSecondary text-sm px-6">
             {portalType === 'member' 
               ? 'Access your subscription, schedule, and renewal status.' 
-              : 'Sign in with your HMO details to access membership resources.'}
+              : 'Sign in with your HMO details to access schedule and WOD.'}
           </p>
         </div>
 
