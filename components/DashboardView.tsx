@@ -743,7 +743,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
             {currentView === 'policies' && (
               <div className="bg-brand-dark p-8 rounded-3xl border border-brand-border max-w-3xl mx-auto animate-fadeIn shadow-lg">
-                <h2 className="text-3xl font-black mb-4 text-brand-textPrimary tracking-tight">CrossFit Gym Policies & Terms</h2>
+                <h2 className="text-3xl font-black mb-4 text-brand-textPrimary tracking-tight">CrossFit Lagos Policies & Terms</h2>
                 <p className="text-brand-textSecondary text-sm font-medium leading-relaxed mb-8">
                   By creating an account or registering a membership, you agree to the policies below. These terms ensure a safe, fair, and consistent training environment for all members.
                 </p>

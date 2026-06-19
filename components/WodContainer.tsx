@@ -155,8 +155,8 @@ const WodContainer: React.FC = () => {
     <div className="max-w-3xl mx-auto pb-12">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
          <div>
-            <h2 className="text-3xl font-black text-brand-textPrimary tracking-tight">W.O.D</h2>
-            <p className="text-brand-textSecondary font-medium">Forging elite fitness daily.</p>
+            <h2 className="text-3xl font-black text-brand-textPrimary tracking-tight">Whiteboard</h2>
+            <p className="text-brand-textSecondary font-medium">Get Fit. Stay Strong.</p>
          </div>
          
          <div className="flex bg-brand-dark p-1 rounded-xl border border-brand-border shadow-inner">
