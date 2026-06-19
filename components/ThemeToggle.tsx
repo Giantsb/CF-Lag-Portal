@@ -16,6 +16,16 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
     
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
+
+    const handleThemeChange = () => {
+      const current = localStorage.getItem('theme') || 'dark';
+      setTheme(current);
+    };
+
+    window.addEventListener('theme-change', handleThemeChange);
+    return () => {
+      window.removeEventListener('theme-change', handleThemeChange);
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -23,6 +33,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
+    window.dispatchEvent(new Event('theme-change'));
   };
 
   return (
