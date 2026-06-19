@@ -19,8 +19,7 @@ import {
   FileTextIcon,
   ArrowDownCircleIcon,
   LockIcon, 
-  PauseCircleIcon,
-  SettingsIcon
+  PauseCircleIcon
 } from './Icons';
 import { MemberData, PauseStatus } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
@@ -70,7 +69,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies' | 'wod' | 'settings'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies' | 'wod'>('dashboard');
   const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
   const [pauseStatus, setPauseStatus] = useState<string>('Loading...');
   const [pauseDate, setPauseDate] = useState<string>('');
@@ -78,21 +77,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [viewDate, setViewDate] = useState(new Date());
   const [scheduleViewMode, setScheduleViewMode] = useState<ViewMode>('month');
   const [holidays, setHolidays] = useState<Record<string, string>>({});
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const stored = localStorage.getItem('theme');
-    if (stored === 'light' || stored === 'dark') return stored;
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return prefersDark ? 'dark' : 'light';
-  });
-
-  useEffect(() => {
-    const handleThemeChange = () => {
-      const current = localStorage.getItem('theme') || 'dark';
-      setTheme(current as 'light' | 'dark');
-    };
-    window.addEventListener('theme-change', handleThemeChange);
-    return () => window.removeEventListener('theme-change', handleThemeChange);
-  }, []);
 
   // Detect portal type from session
   const localSession = localStorage.getItem('hoa_session');
@@ -525,7 +509,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             )}
 
             <button onClick={() => { setCurrentView('policies'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'policies' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><FileTextIcon className="w-5 h-5" />Policies</button>
-            <button onClick={() => { setCurrentView('settings'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'settings' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><SettingsIcon className="w-5 h-5" />Settings</button>
             <a href="https://wa.me/2347059969059" target="_blank" rel="noreferrer" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><PhoneIcon className="w-5 h-5" />Support</a>
          </nav>
          <div className="p-4 border-t border-brand-border">
@@ -903,95 +886,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
               </div>
             )}
 
-            {currentView === 'settings' && (
-              <div className="bg-brand-dark p-8 rounded-3xl border border-brand-border max-w-2xl mx-auto animate-fadeIn shadow-lg space-y-8">
-                <div>
-                  <h2 className="text-3xl font-black text-brand-textPrimary tracking-tight">Settings</h2>
-                  <p className="text-brand-textSecondary text-sm font-medium">Manage your preferences and member portal look.</p>
-                </div>
 
-                {/* 1. App Theme Switcher */}
-                <div className="bg-brand-black/20 p-6 rounded-2xl border border-brand-border space-y-4">
-                  <div className="flex items-center gap-2">
-                    <UserIcon className="w-5 h-5 text-brand-accent" />
-                    <h3 className="font-bold text-sm uppercase tracking-widest text-brand-textPrimary">Theme Preferences</h3>
-                  </div>
-                  <p className="text-xs text-brand-textSecondary">
-                    Select your preferred interface color scheme. The system will persist your choice.
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    <button
-                      onClick={() => {
-                        localStorage.setItem('theme', 'light');
-                        document.documentElement.setAttribute('data-theme', 'light');
-                        window.dispatchEvent(new Event('theme-change'));
-                      }}
-                      className={`flex items-center justify-center gap-3 py-4 rounded-xl border transition-all font-black text-sm ${
-                        theme === 'light'
-                          ? 'bg-brand-accent text-brand-accentText border-brand-accent shadow-lg shadow-brand-accent/20 scale-[1.01]'
-                          : 'bg-brand-surface border-brand-border text-brand-textSecondary hover:text-brand-textPrimary hover:bg-brand-surface/80'
-                      }`}
-                    >
-                      <SunIcon className="w-5 h-5" />
-                      <span>Light Theme</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        localStorage.setItem('theme', 'dark');
-                        document.documentElement.setAttribute('data-theme', 'dark');
-                        window.dispatchEvent(new Event('theme-change'));
-                      }}
-                      className={`flex items-center justify-center gap-3 py-4 rounded-xl border transition-all font-black text-sm ${
-                        theme === 'dark'
-                          ? 'bg-brand-accent text-brand-accentText border-brand-accent shadow-lg shadow-brand-accent/20 scale-[1.01]'
-                          : 'bg-brand-surface border-brand-border text-brand-textSecondary hover:text-brand-textPrimary hover:bg-brand-surface/80'
-                      }`}
-                    >
-                      <MoonIcon className="w-5 h-5" />
-                      <span>Dark Theme</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 2. Account Overview (Read Only) */}
-                <div className="bg-brand-black/20 p-6 rounded-2xl border border-brand-border space-y-4">
-                  <div className="flex items-center gap-2">
-                    <ActivityIcon className="w-5 h-5 text-brand-accent" />
-                    <h3 className="font-bold text-sm uppercase tracking-widest text-brand-textPrimary">Membership Account Info</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div className="space-y-1">
-                      <span className="text-brand-textSecondary block uppercase tracking-widest">Full Name</span>
-                      <span className="text-brand-textPrimary font-bold text-sm">{member.firstName} {member.lastName}</span>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-brand-textSecondary block uppercase tracking-widest">Phone Number</span>
-                      <span className="text-brand-textPrimary font-bold text-sm">{member.phone}</span>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-brand-textSecondary block uppercase tracking-widest">Package Plan</span>
-                      <span className="text-brand-textPrimary font-bold text-sm uppercase">{member.package}</span>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-brand-textSecondary block uppercase tracking-widest">Membership Status</span>
-                      <span className={`font-bold text-sm uppercase ${statusColor}`}>{member.status}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Go Back button */}
-                <div className="pt-2 text-center">
-                  <button
-                    onClick={() => setCurrentView('dashboard')}
-                    className="px-6 py-2 bg-brand-surface border border-brand-border hover:bg-brand-accent/10 hover:border-brand-accent hover:text-brand-accent transition-all rounded-xl text-xs font-black uppercase tracking-widest text-brand-textPrimary"
-                  >
-                    Back to Dashboard
-                  </button>
-                </div>
-              </div>
-            )}
          </div>
       </main>
 
