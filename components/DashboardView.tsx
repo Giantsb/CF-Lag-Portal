@@ -19,7 +19,8 @@ import {
   FileTextIcon,
   ArrowDownCircleIcon,
   LockIcon, 
-  PauseCircleIcon
+  PauseCircleIcon,
+  TagIcon
 } from './Icons';
 import { MemberData, PauseStatus } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
@@ -28,6 +29,7 @@ import ThemeToggle from './ThemeToggle';
 import WodContainer from './WodContainer';
 import GymAnnouncements from './GymAnnouncements';
 import PauseMembershipForm from './PauseMembershipForm';
+import PricingView from './PricingView';
 import { 
   format, addMonths, subMonths, startOfMonth, endOfMonth, 
   startOfWeek, endOfWeek, isSameMonth, addDays, 
@@ -67,6 +69,7 @@ const GOOGLE_API_KEY = atob(KEY_PARTS.join(''));
 const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies' | 'wod'>('dashboard');
@@ -509,6 +512,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             )}
 
             <button onClick={() => { setCurrentView('policies'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'policies' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><FileTextIcon className="w-5 h-5" />Policies</button>
+            <button onClick={() => { setShowPricingModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><TagIcon className="w-5 h-5" />Pricing</button>
             <a href="https://wa.me/2347059969059" target="_blank" rel="noreferrer" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><PhoneIcon className="w-5 h-5" />Support</a>
          </nav>
          <div className="p-4 border-t border-brand-border">
@@ -947,6 +951,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                </a>
                <p className="text-[10px] text-brand-textSecondary/60 italic">Send a screenshot of your transfer for confirmation.</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showPricingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-brand-dark w-full max-w-2xl rounded-3xl border border-brand-border p-8 shadow-2xl relative overflow-hidden animate-scaleIn">
+            <PricingView onClose={() => setShowPricingModal(false)} />
           </div>
         </div>
       )}
