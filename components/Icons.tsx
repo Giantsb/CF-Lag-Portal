@@ -259,3 +259,86 @@ export const TagIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const SupportChatIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="24" 
+    height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    {...props}
+  >
+    {/* Back chat bubble */}
+    <path d="M16 8V4a3 3 0 0 0-3-3H4a3 3 0 0 0-3 3v5a3 3 0 0 0 3 3h2l-2.5 2.5a0.5 0 0 0 .8.6l3.2-2.1c.3.1.6.1.9.1H13" />
+    <circle cx="5" cy="5.5" r="0.75" fill="currentColor" stroke="none" />
+    <circle cx="8" cy="5.5" r="0.75" fill="currentColor" stroke="none" />
+    <circle cx="11" cy="5.5" r="0.75" fill="currentColor" stroke="none" />
+
+    {/* Front chat bubble */}
+    <path d="M6 12.5A3.5 3.5 0 0 1 9.5 9h9a3.5 3.5 0 0 1 3.5 3.5v3a3.5 3.5 0 0 1-3.5 3.5h-.5l1.5 2.5a0.5 0 0 1-.8.6L16 19H9.5A3.5 3.5 0 0 1 6 15.5v-4z" />
+    
+    {/* Headset inside front bubble */}
+    <path d="M9.5 14.5a2.5 2.5 0 0 1 5 0" />
+    <rect x="9" y="14" width="1" height="2" rx="0.5" fill="currentColor" stroke="none" />
+    <rect x="14" y="14" width="1" height="2" rx="0.5" fill="currentColor" stroke="none" />
+    <path d="M14 15.5c0 1-.8 1.5-1.5 1.5" />
+    <circle cx="12.5" cy="17" r="0.5" fill="currentColor" stroke="none" />
+
+    {/* Text lines inside front bubble */}
+    <line x1="16.5" y1="13" x2="19.5" y2="13" />
+    <line x1="16.5" y1="15" x2="18.5" y2="15" />
+  </svg>
+);
+
+export const ProfilePlaceholder = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    {...props}
+  >
+    {/* The outer circular frame */}
+    <circle cx="12" cy="12" r="10" />
+    {/* Head */}
+    <circle cx="12" cy="9.5" r="3" />
+    {/* Shoulders/chest dome */}
+    <path d="M6 18c0-2.5 2.7-4.5 6-4.5s6 2 6 4.5" />
+  </svg>
+);
+
+export const GymPortalIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    {...props}
+  >
+    {/* House / Gym Building Outline */}
+    <path d="M3 10.5 L12 3 L21 10.5 V20.5 A1 1 0 0 1 20 21.5 H4 A1 1 0 0 1 3 20.5 Z" />
+    
+    {/* Checkmark in upper area */}
+    <path d="M10 9.5 L11.5 11 L14.5 8" />
+    
+    {/* Centered Dumbbell in lower area */}
+    <path d="M8 16.5 H16" />
+    <path d="M6 15.5 V17.5" />
+    <path d="M8 14.5 V18.5" />
+    <path d="M16 14.5 V18.5" />
+    <path d="M18 15.5 V17.5" />
+  </svg>
+);
+
+
+

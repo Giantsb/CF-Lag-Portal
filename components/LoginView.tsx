@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { DumbbellIcon, EyeIcon, EyeOffIcon } from './Icons';
+import { GymPortalIcon, EyeIcon, EyeOffIcon } from './Icons';
 import { loginMember, verifyPhoneExists } from '../services/membershipService';
 import { logAnalyticsEvent } from '../services/firebase';
 import { hashPin } from '../utils/encryption';
@@ -129,7 +129,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
       <div className="bg-brand-dark rounded-2xl shadow-2xl p-8 w-full max-w-md border border-brand-border animate-fadeIn">
         <div className="text-center mb-8">
           <div className="inline-block p-4 bg-brand-accent/10 rounded-3xl mb-4 text-brand-accent">
-            <DumbbellIcon className="w-10 h-10" />
+            <GymPortalIcon className="w-10 h-10" />
           </div>
           <h1 className="text-3xl font-bold text-brand-textPrimary mb-1">CrossFit Lagos</h1>
           <p className="text-brand-accent font-bold text-sm tracking-widest uppercase mb-4 opacity-80">Membership Portal</p>

@@ -22,9 +22,9 @@ async function callAppsScript(payload: any, portalType: 'member' | 'hmo' = 'memb
           phone: '08000000000',
           package: portalType === 'hmo' ? 'HMO Plan' : 'Unlimited Monthly',
           amount: '50,000',
-          duration: '1 Month',
+          duration: '12 Months',
           startDate: '2026-02-01',
-          expirationDate: '2026-03-15',
+          expirationDate: '2027-02-01',
           status: 'Valid',
           pauseDays: '0'
         }

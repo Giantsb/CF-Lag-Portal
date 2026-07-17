@@ -59,7 +59,7 @@ const PricingView: React.FC<PricingViewProps> = ({ onClose }) => {
                   <div className="text-right">
                     <p className="text-[10px] text-brand-textSecondary font-mono">{pkg.perMonth}</p>
                     {pkg.save && (
-                      <span className="inline-block text-[9px] text-brand-accent font-black bg-brand-accent/15 px-2 py-0.5 rounded-md mt-1">
+                      <span className="inline-block text-[9px] text-[#ff8a00] font-black bg-[#ff8a00]/15 px-2 py-0.5 rounded-md mt-1">
                         {pkg.save}
                       </span>
                     )}
@@ -90,7 +90,7 @@ const PricingView: React.FC<PricingViewProps> = ({ onClose }) => {
                   <div className="text-right">
                     <p className="text-[10px] text-brand-textSecondary font-mono">{pkg.perMonth}</p>
                     {pkg.save && (
-                      <span className="inline-block text-[9px] text-brand-accent font-black bg-brand-accent/15 px-2 py-0.5 rounded-md mt-1">
+                      <span className="inline-block text-[9px] text-[#ff8a00] font-black bg-[#ff8a00]/15 px-2 py-0.5 rounded-md mt-1">
                         {pkg.save}
                       </span>
                     )}

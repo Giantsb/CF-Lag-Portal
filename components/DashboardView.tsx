@@ -20,7 +20,9 @@ import {
   ArrowDownCircleIcon,
   LockIcon, 
   PauseCircleIcon,
-  TagIcon
+  TagIcon,
+  SupportChatIcon,
+  ProfilePlaceholder
 } from './Icons';
 import { MemberData, PauseStatus } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
@@ -485,26 +487,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
       <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-brand-dark border-r border-brand-border transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col pt-16 lg:pt-0`}>
          <div className="px-6 py-8 mb-2 flex flex-col items-center text-center border-b border-brand-border/50 hidden lg:flex">
             <div className="w-20 h-20 rounded-2xl overflow-hidden bg-brand-black/20 flex items-center justify-center border border-white/10 mb-4 shadow-xl">
-              <img 
-                src={`https://api.dicebear.com/7.x/initials/svg?seed=${member.firstName}%20${member.lastName}&backgroundColor=6366f1,a855f7,ec4899&fontSize=40`} 
-                alt={`${member.firstName} ${member.lastName}`}
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
+              <ProfilePlaceholder className="w-12 h-12 text-brand-accent" />
             </div>
             <h4 className="font-bold text-brand-textPrimary leading-tight">{member.firstName} {member.lastName}</h4>
             <p className="text-[10px] text-brand-textSecondary uppercase tracking-widest mt-1">{member.package}</p>
             <ThemeToggleSwitch className="mt-4" />
          </div>
-         <nav className="flex-1 px-4 py-4 space-y-2">
-            <button onClick={() => { setCurrentView('dashboard'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><HomeIcon className="w-5 h-5" />Dashboard</button>
+          <nav className="flex-1 px-4 py-4 space-y-2">
+            <button onClick={() => { setCurrentView('dashboard'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-[#e0f2fe] text-[#0284c7] font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><HomeIcon className="w-5 h-5" /><span className={currentView === 'dashboard' ? 'text-[#1b1b1f]' : ''}>Dashboard</span></button>
             
             {/* Restricted Content: WOD is only visible for valid members */}
             {isValid && (
-              <button onClick={() => { setCurrentView('wod'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'wod' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><DumbbellIcon className="w-5 h-5" />Workout (WOD)</button>
+              <button onClick={() => { setCurrentView('wod'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'wod' ? 'bg-[#e0f2fe] text-[#0284c7] font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><DumbbellIcon className="w-5 h-5" /><span className={currentView === 'wod' ? 'text-[#1b1b1f]' : ''}>Workout (WOD)</span></button>
             )}
 
-            <button onClick={() => { setCurrentView('schedule'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'schedule' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><CalendarIcon className="w-5 h-5" />Schedule</button>
+            <button onClick={() => { setCurrentView('schedule'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'schedule' ? 'bg-[#e0f2fe] text-[#0284c7] font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><CalendarIcon className="w-5 h-5" /><span className={currentView === 'schedule' ? 'text-[#1b1b1f]' : ''}>Schedule</span></button>
             
             {!isHmo && (
               <>
@@ -513,7 +510,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
               </>
             )}
 
-            <button onClick={() => { setCurrentView('policies'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'policies' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><FileTextIcon className="w-5 h-5" />Policies</button>
+            <button onClick={() => { setCurrentView('policies'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'policies' ? 'bg-[#e0f2fe] text-[#0284c7] font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><FileTextIcon className="w-5 h-5" /><span className={currentView === 'policies' ? 'text-[#1b1b1f]' : ''}>Policies</span></button>
             <button onClick={() => { setShowPricingModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><TagIcon className="w-5 h-5" />Pricing</button>
             <a href="https://wa.me/2347059969059" target="_blank" rel="noreferrer" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><PhoneIcon className="w-5 h-5" />Support</a>
          </nav>
@@ -529,19 +526,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                  <header className="flex justify-between items-center">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl overflow-hidden bg-brand-black/20 flex items-center justify-center border border-white/10 lg:hidden">
-                        <img 
-                          src={`https://api.dicebear.com/7.x/initials/svg?seed=${member.firstName}%20${member.lastName}&backgroundColor=6366f1,a855f7,ec4899&fontSize=40`} 
-                          alt={`${member.firstName} ${member.lastName}`}
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
+                        <ProfilePlaceholder className="w-8 h-8 text-brand-accent" />
                       </div>
                       <div>
                         <h2 className="text-3xl font-bold text-brand-textPrimary">Dashboard</h2>
                         <p className="text-brand-textSecondary">Welcome back, <span className="text-brand-accent font-bold">{member.firstName}</span></p>
                       </div>
                     </div>
-                    <div className="hidden md:block">
+                    <div className="flex items-center">
                       <ThemeToggle />
                     </div>
                  </header>
@@ -551,7 +543,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* MERGED CARD: Status + Identity + Expiry */}
-                    <div className={`lg:col-span-2 p-6 rounded-3xl border-2 ${borderColor} ${bgColor} flex flex-col justify-between min-h-[180px] shadow-lg relative overflow-hidden transition-all duration-300`}>
+                    <div className={`lg:col-span-2 p-6 rounded-3xl border border-brand-border hover:border-brand-accent/30 ${bgColor} flex flex-col justify-between min-h-[180px] shadow-lg relative overflow-hidden transition-all duration-300`}>
                       {/* Background Decoration */}
                       <div className="absolute top-0 right-0 p-4 opacity-5">
                         <UserIcon className="w-32 h-32" />
@@ -560,19 +552,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                       <div className="flex justify-between items-start relative z-10">
                         <div className="flex gap-4">
                           <div className="w-14 h-14 rounded-2xl overflow-hidden bg-brand-black/20 flex items-center justify-center border border-white/10">
-                            <img 
-                              src={`https://api.dicebear.com/7.x/initials/svg?seed=${member.firstName}%20${member.lastName}&backgroundColor=6366f1,a855f7,ec4899&fontSize=40`} 
-                              alt={`${member.firstName} ${member.lastName}`}
-                              className="w-full h-full object-cover"
-                              referrerPolicy="no-referrer"
-                            />
+                            <ProfilePlaceholder className="w-9 h-9 text-brand-accent" />
                           </div>
                           <div className="flex flex-col justify-center">
-                            <h3 className="font-black text-2xl text-brand-textPrimary leading-none">{member.firstName} {member.lastName}</h3>
+                            <h3 className="font-ibm font-black text-2xl text-brand-textPrimary leading-none">{member.firstName} {member.lastName}</h3>
                             {member.email && member.email !== 'N/A' && (
                               <p className="text-brand-textSecondary text-xs mt-1 font-medium">{member.email}</p>
                             )}
-                            <ThemeToggleSwitch className="mt-2.5" />
                           </div>
                         </div>
                         <div className="flex gap-2 items-center">
@@ -621,24 +607,23 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                     {!isHmo && (
                       <div className="p-6 rounded-3xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[180px] shadow-md transition-all duration-300 hover:shadow-lg">
                         <div className="flex justify-between items-start">
-                          <div className="p-3 bg-brand-accent/10 rounded-2xl text-brand-accent">
-                            <ActivityIcon className="w-8 h-8" />
-                          </div>
                           <span className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest">Shortcuts</span>
                         </div>
                         <div className="space-y-3 mt-4">
                           <button 
                             onClick={() => setShowPaymentModal(true)}
-                            className="w-full bg-brand-accent text-brand-accentText text-sm font-black py-3 rounded-2xl hover:bg-brand-accentHover transition-all shadow-md shadow-brand-accent/10 active:scale-[0.98]"
+                            className="w-full bg-[#1f6feb] text-white text-xs font-black py-2 rounded-xl hover:bg-[#155fc4] transition-all shadow-md shadow-[#1f6feb]/10 active:scale-[0.98]"
                           >
-                            RENEW MEMBERSHIP
+                            RENEW 
                           </button>
-                          <button 
-                            onClick={() => setShowPauseModal(true)}
-                            className="w-full bg-brand-surface text-brand-textPrimary text-sm font-black py-3 rounded-2xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
-                          >
-                            PAUSE MEMBERSHIP
-                          </button>
+                          {!isExpired && (
+                            <button 
+                              onClick={() => setCurrentView('wod')}
+                              className="w-full bg-brand-surface text-brand-textPrimary text-xs font-black py-2 rounded-xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
+                            >
+                              WOD
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
@@ -678,7 +663,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                     {!isHmo && (
                       <div className="bg-brand-accent/5 border border-brand-accent/20 rounded-3xl p-6 flex flex-col justify-center items-center text-center group transition-all duration-300 hover:bg-brand-accent/10">
                         <div className="w-12 h-12 bg-brand-accent rounded-2xl flex items-center justify-center text-brand-accentText mb-4 transform group-hover:rotate-12 transition-transform">
-                            <DumbbellIcon className="w-6 h-6" />
+                            <SupportChatIcon className="w-6 h-6" />
                         </div>
                         <h4 className="font-black text-brand-textPrimary mb-2 uppercase text-xs tracking-widest">Support</h4>
                         <p className="text-xs text-brand-textSecondary mb-6 font-medium">Billing, workout queries, or account updates.</p>
@@ -768,13 +753,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                       ) : (
                         <ChevronDownIcon className="w-5 h-5 text-brand-textSecondary group-hover:text-brand-accent" />
                       )}
-                   </button>
-
-                   {isPoliciesExpanded && (
+                   </button>                    {isPoliciesExpanded && (
                       <div className="mt-10 space-y-10 animate-fadeIn">
                          {/* 1. Membership Overview */}
                          <section>
-                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">1. Membership Overview</h3>
+                            <h3 className="text-[#1b1b1f] dark:text-[#f3f4f6] font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">1. Membership Overview</h3>
                             <ul className="space-y-4 text-sm text-brand-textSecondary font-medium">
                                <li className="flex gap-4">
                                   <span className="text-brand-accent font-bold mt-0.5">•</span>
@@ -793,7 +776,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                          {/* 2. Freeze Policy */}
                          <section>
-                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">2. Membership Freeze (Pause) Policy</h3>
+                            <h3 className="text-[#1b1b1f] dark:text-[#f3f4f6] font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">2. Membership Freeze (Pause) Policy</h3>
                             <p className="text-sm text-brand-textSecondary font-medium leading-relaxed mb-4">Members may request to pause their membership due to travel, injury, or personal reasons.</p>
                             
                             <div className="bg-brand-black/20 p-5 rounded-2xl border border-brand-border mb-6">
@@ -803,7 +786,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                                   <li>• Only <strong>active memberships</strong> may be paused.</li>
                                   <li>• Approved pauses extend the membership by the same number of days.</li>
                                   <li>• Freeze requests will <strong>not</strong> be granted if submitted within <strong>7 days</strong> of the membership’s expiration or renewal date.</li>
-                               </ul>
+                                </ul>
                             </div>
 
                             <div className="bg-brand-black/20 p-5 rounded-2xl border border-brand-border">
@@ -812,14 +795,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                                   <li className="flex justify-between"><span>Monthly Plans</span> <span className="text-brand-accent">14 Days</span></li>
                                   <li className="flex justify-between"><span>3 & 6 Month Plans</span> <span className="text-brand-accent">14–20 Days</span></li>
                                   <li className="flex justify-between"><span>12 Month Plans</span> <span className="text-brand-accent">14–25 Days</span></li>
-                               </ul>
+                                </ul>
                                <p className="text-[10px] text-brand-textSecondary italic mt-4 opacity-70">Note: Only one pause is allowed per membership cycle.</p>
                             </div>
                          </section>
 
                          {/* 3. Refund Policy */}
                          <section>
-                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">3. Refund Policy</h3>
+                            <h3 className="text-[#1b1b1f] dark:text-[#f3f4f6] font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">3. Refund Policy</h3>
                             <p className="text-sm text-brand-textSecondary font-medium leading-relaxed mb-4">The gym maintains a strict no-refund policy. No refunds will be issued for:</p>
                             <div className="grid grid-cols-2 gap-3 mb-6">
                                <div className="p-3 bg-brand-surface rounded-xl text-[10px] font-black uppercase text-brand-textSecondary border border-brand-border text-center">Unused days</div>
@@ -837,13 +820,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                          {/* 4. Non-Transferable */}
                          <section>
-                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-2 pb-2 border-b border-brand-accent/20">4. Non-Transferable Memberships</h3>
+                            <h3 className="text-[#1b1b1f] dark:text-[#f3f4f6] font-black uppercase text-xs tracking-widest mb-2 pb-2 border-b border-brand-accent/20">4. Non-Transferable Memberships</h3>
                             <p className="text-sm text-brand-textSecondary font-medium">All memberships are personal and cannot be transferred or shared.</p>
                          </section>
 
                          {/* 5. Health & Safety */}
                          <section>
-                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">5. Health & Safety Requirements</h3>
+                            <h3 className="text-[#1b1b1f] dark:text-[#f3f4f6] font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">5. Health & Safety Requirements</h3>
                             <ul className="space-y-3 text-sm text-brand-textSecondary font-medium">
                                <li className="flex gap-4"><span className="text-brand-accent font-bold">•</span><span>Members must disclose injuries or medical conditions.</span></li>
                                <li className="flex gap-4"><span className="text-brand-accent font-bold">•</span><span>Follow coaching instructions and train within your limits.</span></li>
@@ -854,7 +837,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                          {/* 6. Class Etiquette */}
                          <section>
-                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">6. Class Etiquette & Conduct</h3>
+                            <h3 className="text-[#1b1b1f] dark:text-[#f3f4f6] font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">6. Class Etiquette & Conduct</h3>
                             <ul className="space-y-3 text-sm text-brand-textSecondary font-medium">
                                <li className="flex gap-4"><span className="text-brand-accent font-bold">•</span><span>Arrive on time for classes.</span></li>
                                <li className="flex gap-4"><span className="text-brand-accent font-bold">•</span><span>Respect coaches and fellow members.</span></li>
@@ -865,7 +848,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                          {/* 7. Photography */}
                          <section>
-                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">7. Photography & Media</h3>
+                            <h3 className="text-[#1b1b1f] dark:text-[#f3f4f6] font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">7. Photography & Media</h3>
                             <ul className="space-y-3 text-sm text-brand-textSecondary font-medium">
                                <li className="flex gap-4"><span className="text-brand-accent font-bold">•</span><span>The gym may capture photos/videos during classes for community or promotional purposes.</span></li>
                                <li className="flex gap-4"><span className="text-brand-accent font-bold">•</span><span>Members may request exemption by notifying management in writing.</span></li>
@@ -874,7 +857,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                          {/* 8. Liability */}
                          <section>
-                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">8. Liability Waiver</h3>
+                            <h3 className="text-[#1b1b1f] dark:text-[#f3f4f6] font-black uppercase text-xs tracking-widest mb-4 pb-2 border-b border-brand-accent/20">8. Liability Waiver</h3>
                             <ul className="space-y-4 text-sm text-brand-textSecondary font-medium">
                                <li className="flex gap-4"><span className="text-brand-accent font-bold">•</span><span>You acknowledge that CrossFit training involves physical risk.</span></li>
                                <li className="flex gap-4"><span className="text-brand-accent font-bold">•</span><span>You participate voluntarily and assume responsibility for your own safety.</span></li>
@@ -884,7 +867,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
 
                          {/* 9. Agreement */}
                          <section className="bg-brand-accent/5 p-6 rounded-2xl border border-brand-accent/20">
-                            <h3 className="text-brand-accent font-black uppercase text-xs tracking-widest mb-2">9. Agreement</h3>
+                            <h3 className="text-[#1b1b1f] dark:text-[#f3f4f6] font-black uppercase text-xs tracking-widest mb-2">9. Agreement</h3>
                             <p className="text-sm text-brand-textPrimary font-black italic">By registering or using the gym facilities, you confirm that you have read and agree to these terms.</p>
                          </section>
                       </div>
