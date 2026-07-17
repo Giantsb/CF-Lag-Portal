@@ -576,6 +576,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                         </div>
                       </div>
 
+                      {isHmo && (
+                        <div className="grid grid-cols-2 gap-4 mt-4 p-3 bg-brand-black/25 rounded-2xl border border-white/5 relative z-10">
+                          <div>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-1">HMO Name</p>
+                            <p className="font-bold text-brand-textPrimary text-sm">{member.package || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-1">HMO ID</p>
+                            <p className="font-bold text-brand-textPrimary text-sm">{member.amount || 'N/A'}</p>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="my-6 relative z-10">
                          {hasValidDates ? (
                            <div className="flex items-end gap-2">
@@ -604,63 +617,83 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                       </div>
                     </div>
 
-                    {!isHmo && (
-                      <div className="p-6 rounded-3xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[180px] shadow-md transition-all duration-300 hover:shadow-lg">
-                        <div className="flex justify-between items-start">
-                          <span className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest">Shortcuts</span>
-                        </div>
-                        <div className="space-y-3 mt-4">
-                          <button 
-                            onClick={() => setShowPaymentModal(true)}
-                            className="w-full bg-[#1f6feb] text-white text-xs font-black py-2 rounded-xl hover:bg-[#155fc4] transition-all shadow-md shadow-[#1f6feb]/10 active:scale-[0.98]"
-                          >
-                            RENEW 
-                          </button>
-                          {!isExpired && (
-                            <button 
-                              onClick={() => setCurrentView('wod')}
-                              className="w-full bg-brand-surface text-brand-textPrimary text-xs font-black py-2 rounded-xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
-                            >
-                              WOD
-                            </button>
-                          )}
-                        </div>
+                    <div className="p-6 rounded-3xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[180px] shadow-md transition-all duration-300 hover:shadow-lg">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest">Shortcuts</span>
                       </div>
-                    )}
+                      <div className="space-y-3 mt-4">
+                        {!isHmo ? (
+                          <>
+                            <button 
+                              onClick={() => setShowPaymentModal(true)}
+                              className="w-full bg-[#1f6feb] text-white text-xs font-black py-2 rounded-xl hover:bg-[#155fc4] transition-all shadow-md shadow-[#1f6feb]/10 active:scale-[0.98]"
+                            >
+                              RENEW 
+                            </button>
+                            {!isExpired && (
+                              <button 
+                                onClick={() => setCurrentView('wod')}
+                                className="w-full bg-brand-surface text-brand-textPrimary text-xs font-black py-2 rounded-xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
+                              >
+                                WOD
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {!isExpired && (
+                              <button 
+                                onClick={() => setCurrentView('wod')}
+                                className="w-full bg-[#1f6feb] text-white text-xs font-black py-2 rounded-xl hover:bg-[#155fc4] transition-all shadow-md shadow-[#1f6feb]/10 active:scale-[0.98]"
+                              >
+                                WOD
+                              </button>
+                            )}
+                            <a 
+                              href="https://wa.me/2347059969059" 
+                              target="_blank" 
+                              rel="noreferrer"
+                              className="flex items-center justify-center gap-1.5 w-full text-center bg-brand-surface text-brand-textPrimary text-xs font-black py-2 rounded-xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
+                            >
+                              <PhoneIcon className="w-3.5 h-3.5 text-brand-accent" />
+                              SUPPORT
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    </div>
                  </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className={`${isHmo ? 'md:col-span-3' : 'md:col-span-2'} bg-brand-dark border border-brand-border rounded-3xl p-6 shadow-sm`}>
-                       <h3 className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-6 flex items-center gap-2">
-                         <FileTextIcon className="w-4 h-4 text-brand-accent" /> {isHmo ? 'HMO Details' : 'Subscription Data'}
-                       </h3>
-                       <div className={`grid grid-cols-2 ${isHmo ? 'sm:grid-cols-2' : 'sm:grid-cols-4'} gap-8`}>
-                          <div>
-                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">{isHmo ? 'HMO Name' : 'Package'}</p>
-                            <p className="font-bold text-brand-textPrimary text-lg">{member.package || (isHmo ? 'N/A' : 'Standard')}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">{isHmo ? 'HMO ID' : 'Rate'}</p>
-                            <p className="font-bold text-brand-textPrimary text-lg">
-                              {isHmo ? (member.amount || 'N/A') : `₦${formatAmount(member.amount)}`}
-                            </p>
-                          </div>
-                          {!isHmo && member.startDate !== 'N/A' && (
+                 {!isHmo && (
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="md:col-span-2 bg-brand-dark border border-brand-border rounded-3xl p-6 shadow-sm">
+                         <h3 className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-6 flex items-center gap-2">
+                           <FileTextIcon className="w-4 h-4 text-brand-accent" /> Subscription Data
+                         </h3>
+                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
                             <div>
-                              <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Start Date</p>
-                              <p className="font-bold text-brand-textPrimary text-lg">{member.startDate}</p>
+                              <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Package</p>
+                              <p className="font-bold text-brand-textPrimary text-lg">{member.package || 'Standard'}</p>
                             </div>
-                          )}
-                          {!isHmo && (
+                            <div>
+                              <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Rate</p>
+                              <p className="font-bold text-brand-textPrimary text-lg">
+                                ₦{formatAmount(member.amount)}
+                              </p>
+                            </div>
+                            {member.startDate !== 'N/A' && (
+                              <div>
+                                <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Start Date</p>
+                                <p className="font-bold text-brand-textPrimary text-lg">{member.startDate}</p>
+                              </div>
+                            )}
                             <div>
                               <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest mb-2">Pause Days</p>
                               <p className="font-bold text-brand-textPrimary text-lg">{member.pauseDays || '0'}</p>
                             </div>
-                          )}
-                       </div>
-                    </div>
+                         </div>
+                      </div>
 
-                    {!isHmo && (
                       <div className="bg-brand-accent/5 border border-brand-accent/20 rounded-3xl p-6 flex flex-col justify-center items-center text-center group transition-all duration-300 hover:bg-brand-accent/10">
                         <div className="w-12 h-12 bg-brand-accent rounded-2xl flex items-center justify-center text-brand-accentText mb-4 transform group-hover:rotate-12 transition-transform">
                             <SupportChatIcon className="w-6 h-6" />
@@ -676,8 +709,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                           <PhoneIcon className="w-3 h-3" /> SEND WHATSAPP MESSAGE 
                         </a>
                       </div>
-                    )}
-                 </div>
+                   </div>
+                 )}
 
               </div>
             )}
