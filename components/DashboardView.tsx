@@ -26,6 +26,7 @@ import { MemberData, PauseStatus } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
 import { getPauseStatus } from '../services/membershipService';
 import ThemeToggle from './ThemeToggle';
+import ThemeToggleSwitch from './ThemeToggleSwitch';
 import WodContainer from './WodContainer';
 import GymAnnouncements from './GymAnnouncements';
 import PauseMembershipForm from './PauseMembershipForm';
@@ -493,6 +494,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
             </div>
             <h4 className="font-bold text-brand-textPrimary leading-tight">{member.firstName} {member.lastName}</h4>
             <p className="text-[10px] text-brand-textSecondary uppercase tracking-widest mt-1">{member.package}</p>
+            <ThemeToggleSwitch className="mt-4" />
          </div>
          <nav className="flex-1 px-4 py-4 space-y-2">
             <button onClick={() => { setCurrentView('dashboard'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-brand-accent text-brand-accentText font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><HomeIcon className="w-5 h-5" />Dashboard</button>
@@ -570,6 +572,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                             {member.email && member.email !== 'N/A' && (
                               <p className="text-brand-textSecondary text-xs mt-1 font-medium">{member.email}</p>
                             )}
+                            <ThemeToggleSwitch className="mt-2.5" />
                           </div>
                         </div>
                         <div className="flex gap-2 items-center">

@@ -74,7 +74,7 @@ const PricingView: React.FC<PricingViewProps> = ({ onClose }) => {
         <div className="space-y-4">
           <div className="flex items-center gap-2 border-b border-brand-border/30 pb-2">
             <span className="w-2 h-2 bg-brand-textSecondary rounded-full"></span>
-            <h4 className="text-xs font-black uppercase tracking-widest text-brand-textPrimary">Limited Packages</h4>
+            <h4 className="text-xs font-black uppercase tracking-widest text-brand-textPrimary">Limited Packages (3x/week)</h4>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {limitedPackages.map((pkg) => (
