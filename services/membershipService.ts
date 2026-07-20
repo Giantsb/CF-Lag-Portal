@@ -224,8 +224,9 @@ export async function requestResetOTP(
   portalType: 'member' | 'hmo' = 'member'
 ): Promise<{ success: boolean; message?: string }> {
   try {
+    const action = portalType === 'hmo' ? 'sendResetOTP' : 'requestResetOTP';
     const result = await callAppsScript({
-      action: 'requestResetOTP',
+      action: action,
       phone: phone.trim(),
       email: email.trim()
     }, portalType);
@@ -249,7 +250,8 @@ export async function resetPinWithOTP(
       action: 'resetPinWithOTP',
       phone: phone.trim(),
       otp: otp.trim(),
-      newHashedPin: newHashedPin
+      newHashedPin: newHashedPin,
+      hashedPin: newHashedPin // Map to hashedPin for Workbook B (HMO) script
     }, portalType);
     return { success: result.success, message: result.message };
   } catch (err: any) {
