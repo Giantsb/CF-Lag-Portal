@@ -26,7 +26,8 @@ import {
 } from './Icons';
 import { MemberData, PauseStatus } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
-import { getPauseStatus } from '../services/membershipService';
+import { getPauseStatus, updateEmail } from '../services/membershipService';
+import { hashPin } from '../utils/encryption';
 import ThemeToggle from './ThemeToggle';
 import ThemeToggleSwitch from './ThemeToggleSwitch';
 import WodContainer from './WodContainer';
@@ -43,6 +44,7 @@ import {
 interface DashboardViewProps {
   member: MemberData;
   onLogout: () => void;
+  onUpdateMemberData?: (updated: MemberData) => void;
 }
 
 type ScheduleDay = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
@@ -69,7 +71,7 @@ const KEY_PARTS = [
 ];
 const GOOGLE_API_KEY = atob(KEY_PARTS.join(''));
 
-const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdateMemberData }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
@@ -79,6 +81,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
   const [pauseStatus, setPauseStatus] = useState<string>('Loading...');
   const [pauseDate, setPauseDate] = useState<string>('');
+
+  // Email update states
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [pinVerify, setPinVerify] = useState('');
+  const [emailModalError, setEmailModalError] = useState('');
+  const [emailModalSuccess, setEmailModalSuccess] = useState('');
+  const [emailModalLoading, setEmailModalLoading] = useState(false);
   
   const [viewDate, setViewDate] = useState(new Date());
   const [scheduleViewMode, setScheduleViewMode] = useState<ViewMode>('month');
@@ -141,6 +151,56 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
   useEffect(() => {
     logAnalyticsEvent('portal_view', { page: currentView, status: member.status, portal: portalType });
   }, [currentView, member.status, portalType]);
+
+  const handleUpdateEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailModalError('');
+    setEmailModalSuccess('');
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!newEmail || !emailRegex.test(newEmail.trim())) {
+      setEmailModalError('Please enter a valid email address');
+      return;
+    }
+
+    if (!pinVerify || pinVerify.length !== 4) {
+      setEmailModalError('Please enter your 4-digit PIN for verification');
+      return;
+    }
+
+    setEmailModalLoading(true);
+    try {
+      const hashedPin = hashPin(pinVerify, member.phone);
+      console.log(`[Dashboard] Updating email to ${newEmail} for phone ${member.phone}...`);
+      const result = await updateEmail(member.phone, hashedPin, newEmail.trim(), portalType);
+
+      if (result.success) {
+        logAnalyticsEvent('email_update_success', { portal: portalType });
+        setEmailModalSuccess('Email address updated successfully!');
+        
+        // Notify the parent component of the new email
+        if (onUpdateMemberData) {
+          onUpdateMemberData({
+            ...member,
+            email: newEmail.trim()
+          });
+        }
+
+        // Auto-close after delay
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setEmailModalSuccess('');
+          setPinVerify('');
+        }, 1500);
+      } else {
+        setEmailModalError(result.message || 'Verification failed. Please verify your PIN.');
+      }
+    } catch (err: any) {
+      setEmailModalError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setEmailModalLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchPauseStatus = async () => {
@@ -556,9 +616,25 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
                           </div>
                           <div className="flex flex-col justify-center">
                             <h3 className="font-ibm font-black text-2xl text-brand-textPrimary leading-none">{member.firstName} {member.lastName}</h3>
-                            {member.email && member.email !== 'N/A' && (
-                              <p className="text-brand-textSecondary text-xs mt-1 font-medium">{member.email}</p>
-                            )}
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-brand-textSecondary text-xs font-medium">{member.email && member.email !== 'N/A' ? member.email : 'No registered email'}</p>
+                              <button 
+                                onClick={() => {
+                                  setNewEmail(member.email && member.email !== 'N/A' ? member.email : '');
+                                  setPinVerify('');
+                                  setEmailModalError('');
+                                  setEmailModalSuccess('');
+                                  setShowEmailModal(true);
+                                }}
+                                className="text-brand-textSecondary hover:text-brand-accent transition-colors p-1"
+                                title="Update Email Address"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                  <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                              </button>
+                            </div>
                           </div>
                         </div>
                         <div className="flex gap-2 items-center">
@@ -978,6 +1054,89 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-brand-dark w-full max-w-2xl rounded-3xl border border-brand-border p-8 shadow-2xl relative overflow-hidden animate-scaleIn">
             <PricingView onClose={() => setShowPricingModal(false)} />
+          </div>
+        </div>
+      )}
+
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-brand-dark w-full max-w-md rounded-3xl border border-brand-border p-8 shadow-2xl animate-scaleIn relative">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-black text-xl tracking-tight text-brand-textPrimary">Update Email</h3>
+              <button 
+                onClick={() => setShowEmailModal(false)} 
+                className="p-2 bg-brand-surface rounded-full hover:text-brand-accent transition-colors"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateEmailSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-brand-textSecondary uppercase tracking-wider mb-2">
+                  New Email Address
+                </label>
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => {
+                    setNewEmail(e.target.value);
+                    if (emailModalError) setEmailModalError('');
+                  }}
+                  placeholder="e.g. member@email.com"
+                  className="w-full px-4 py-3.5 bg-brand-input border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none text-brand-textPrimary font-medium text-sm transition-all"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-brand-textSecondary uppercase tracking-wider mb-2">
+                  Confirm with your 4-digit PIN
+                </label>
+                <input
+                  type="password"
+                  value={pinVerify}
+                  onChange={(e) => {
+                    setPinVerify(e.target.value.replace(/\D/g, '').slice(0, 4));
+                    if (emailModalError) setEmailModalError('');
+                  }}
+                  placeholder="••••"
+                  maxLength={4}
+                  inputMode="numeric"
+                  className="w-full px-4 py-3.5 bg-brand-input border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-transparent outline-none text-brand-textPrimary font-mono text-center text-lg tracking-widest transition-all"
+                  required
+                />
+              </div>
+
+              {emailModalError && (
+                <div className="bg-brand-danger/10 border border-brand-danger/20 text-brand-danger px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 animate-shake">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-danger" />
+                  {emailModalError}
+                </div>
+              )}
+
+              {emailModalSuccess && (
+                <div className="bg-brand-success/10 border border-brand-success/20 text-brand-success px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-success animate-pulse" />
+                  {emailModalSuccess}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={emailModalLoading}
+                className="w-full bg-brand-accent text-brand-accentText py-3.5 rounded-xl font-bold hover:bg-brand-accentHover transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/25 active:scale-[0.98]"
+              >
+                {emailModalLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Updating...</span>
+                  </>
+                ) : (
+                  <span>Update Email Address</span>
+                )}
+              </button>
+            </form>
           </div>
         </div>
       )}

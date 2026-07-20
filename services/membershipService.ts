@@ -30,6 +30,18 @@ async function callAppsScript(payload: any, portalType: 'member' | 'hmo' = 'memb
         }
       };
     }
+    if (payload.action === 'verifyPhone') {
+      return { success: true, exists: true, message: 'Phone number verified' };
+    }
+    if (payload.action === 'requestResetOTP') {
+      return { success: true, message: 'Recovery code sent to your email address.' };
+    }
+    if (payload.action === 'resetPinWithOTP') {
+      return { success: true, message: 'Your PIN has been successfully reset. You can now log in.' };
+    }
+    if (payload.action === 'updateEmail') {
+      return { success: true, message: 'Email address updated successfully', updatedEmail: payload.newEmail };
+    }
   }
 
   const controller = new AbortController();
@@ -71,15 +83,14 @@ async function callAppsScript(payload: any, portalType: 'member' | 'hmo' = 'memb
 
 /**
  * Verifies if a phone number exists.
- * We use 'getMember' as a fail-safe because it exists in all backend versions.
+ * Uses the dedicated 'verifyPhone' action, with fallback to 'getMember'.
  */
 export async function verifyPhoneExists(phone: string, portalType: 'member' | 'hmo' = 'member'): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log(`[MembershipService] Verifying phone using "getMember" on ${portalType} portal...`);
-    const result = await callAppsScript({ action: 'getMember', phone: phone.trim() }, portalType);
+    console.log(`[MembershipService] Verifying phone using "verifyPhone" on ${portalType} portal...`);
+    const result = await callAppsScript({ action: 'verifyPhone', phone: phone.trim() }, portalType);
     
-    // If getMember succeeds, the member exists in the sheet
-    if (result.success === true) {
+    if (result.success && result.exists) {
       return { success: true };
     } else {
       return { 
@@ -88,6 +99,13 @@ export async function verifyPhoneExists(phone: string, portalType: 'member' | 'h
       };
     }
   } catch (err: any) {
+    try {
+      console.log(`[MembershipService] Fallback to "getMember" for verification...`);
+      const fallbackResult = await callAppsScript({ action: 'getMember', phone: phone.trim() }, portalType);
+      if (fallbackResult.success === true) {
+        return { success: true };
+      }
+    } catch (_) {}
     return { success: false, error: 'Service temporarily unavailable. Please try again later.' };
   }
 }
@@ -193,5 +211,70 @@ export async function getPauseStatus(phone: string, portalType: 'member' | 'hmo'
   } catch (err: any) {
     console.error('[MembershipService] Failed to fetch pause status:', err.message);
     return { status: 'Error' };
+  }
+}
+
+/**
+ * Requests a 6-digit OTP code to reset a member's PIN.
+ * Requires their registered email to match the phone record.
+ */
+export async function requestResetOTP(
+  phone: string,
+  email: string,
+  portalType: 'member' | 'hmo' = 'member'
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const result = await callAppsScript({
+      action: 'requestResetOTP',
+      phone: phone.trim(),
+      email: email.trim()
+    }, portalType);
+    return { success: result.success, message: result.message };
+  } catch (err: any) {
+    return { success: false, message: err.message || 'Failed to send recovery code.' };
+  }
+}
+
+/**
+ * Resets the 4-digit PIN using the 6-digit OTP code received in email.
+ */
+export async function resetPinWithOTP(
+  phone: string,
+  otp: string,
+  newHashedPin: string,
+  portalType: 'member' | 'hmo' = 'member'
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const result = await callAppsScript({
+      action: 'resetPinWithOTP',
+      phone: phone.trim(),
+      otp: otp.trim(),
+      newHashedPin: newHashedPin
+    }, portalType);
+    return { success: result.success, message: result.message };
+  } catch (err: any) {
+    return { success: false, message: err.message || 'Failed to reset PIN.' };
+  }
+}
+
+/**
+ * Updates a member's email address in the sheet (authenticated by phone + hashed PIN).
+ */
+export async function updateEmail(
+  phone: string,
+  hashedPin: string,
+  newEmail: string,
+  portalType: 'member' | 'hmo' = 'member'
+): Promise<{ success: boolean; message?: string; updatedEmail?: string }> {
+  try {
+    const result = await callAppsScript({
+      action: 'updateEmail',
+      phone: phone.trim(),
+      hashedPin: hashedPin,
+      newEmail: newEmail.trim()
+    }, portalType);
+    return { success: result.success, message: result.message, updatedEmail: result.updatedEmail };
+  } catch (err: any) {
+    return { success: false, message: err.message || 'Failed to update email.' };
   }
 }

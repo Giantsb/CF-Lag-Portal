@@ -139,6 +139,7 @@ function App() {
         <DashboardView 
           member={memberData} 
           onLogout={handleLogout} 
+          onUpdateMemberData={setMemberData}
         />
       )}
 
