@@ -22,7 +22,8 @@ import {
   PauseCircleIcon,
   TagIcon,
   SupportChatIcon,
-  ProfilePlaceholder
+  ProfilePlaceholder,
+  AlertCircleIcon
 } from './Icons';
 import { MemberData, PauseStatus } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
@@ -132,6 +133,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
   }
 
   const isExpiringSoon = isValid && hasValidDates && diffDays <= 7 && diffDays >= 0;
+  const hasEmail = Boolean(member.email && member.email !== 'N/A' && member.email.trim() !== '');
 
   let progressPercentage = 0;
   if (hasValidDates && startDate && expDate) {
@@ -617,23 +619,51 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
                           <div className="flex flex-col justify-center">
                             <h3 className="font-ibm font-black text-2xl text-brand-textPrimary leading-none">{member.firstName} {member.lastName}</h3>
                             <div className="flex items-center gap-2 mt-1">
-                              <p className="text-brand-textSecondary text-xs font-medium">{member.email && member.email !== 'N/A' ? member.email : 'No registered email'}</p>
-                              <button 
-                                onClick={() => {
-                                  setNewEmail(member.email && member.email !== 'N/A' ? member.email : '');
-                                  setPinVerify('');
-                                  setEmailModalError('');
-                                  setEmailModalSuccess('');
-                                  setShowEmailModal(true);
-                                }}
-                                className="text-brand-textSecondary hover:text-brand-accent transition-colors p-1"
-                                title="Update Email Address"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                  <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                              </button>
+                              {!hasEmail ? (
+                                <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-full animate-pulse">
+                                  <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                  </span>
+                                  <span className="text-amber-500 text-xs font-bold flex items-center gap-1">
+                                    <AlertCircleIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                    No registered email
+                                  </span>
+                                  <button 
+                                    onClick={() => {
+                                      setNewEmail('');
+                                      setPinVerify('');
+                                      setEmailModalError('');
+                                      setEmailModalSuccess('');
+                                      setShowEmailModal(true);
+                                    }}
+                                    className="ml-1 bg-amber-500 hover:bg-amber-400 text-black px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95"
+                                    title="Add Email Address"
+                                  >
+                                    Add
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <p className="text-brand-textSecondary text-xs font-medium">{member.email}</p>
+                                  <button 
+                                    onClick={() => {
+                                      setNewEmail(member.email);
+                                      setPinVerify('');
+                                      setEmailModalError('');
+                                      setEmailModalSuccess('');
+                                      setShowEmailModal(true);
+                                    }}
+                                    className="text-brand-textSecondary hover:text-brand-accent transition-colors p-1"
+                                    title="Update Email Address"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                      <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -651,6 +681,27 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
                           </span>
                         </div>
                       </div>
+
+                      {!hasEmail && (
+                        <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between gap-3 relative z-10">
+                          <div className="flex items-center gap-2 text-xs text-amber-300 font-medium">
+                            <AlertCircleIcon className="w-4 h-4 text-amber-400 shrink-0" />
+                            <span>Add your email address to enable PIN resets & receive account updates.</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setNewEmail('');
+                              setPinVerify('');
+                              setEmailModalError('');
+                              setEmailModalSuccess('');
+                              setShowEmailModal(true);
+                            }}
+                            className="bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs px-3 py-1.5 rounded-xl transition-all shadow-sm shrink-0 active:scale-95 whitespace-nowrap"
+                          >
+                            Add Email
+                          </button>
+                        </div>
+                      )}
 
                       {isHmo && (
                         <div className="grid grid-cols-2 gap-4 mt-4 p-3 bg-brand-black/25 rounded-2xl border border-white/5 relative z-10">
