@@ -11,6 +11,7 @@ import {
 } from './Icons';
 import { WodEntry } from '../types';
 import { WOD_SCRIPT_URL } from '../constants';
+import FitnessLoader from './FitnessLoader';
 
 type WodMode = 'today' | 'history';
 
@@ -69,7 +70,7 @@ const WodContainer: React.FC = () => {
   };
 
   const renderToday = () => {
-    if (loading) return <LoadingSkeleton mode="today" />;
+    if (loading) return <FitnessLoader type="random" label="Loading Today's Workout..." sublabel="CROSSFIT LAGOS" />;
     if (error) return <ErrorView message={error} onRetry={() => fetchData('today')} />;
     if (isRestDay || !todayData) return <RestDayView />;
 
@@ -109,7 +110,7 @@ const WodContainer: React.FC = () => {
   };
 
   const renderHistory = () => {
-    if (loading) return <LoadingSkeleton mode="history" count={5} />;
+    if (loading) return <FitnessLoader type="random" label="Loading Workout History..." sublabel="CROSSFIT LAGOS" />;
     if (error) return <ErrorView message={error} onRetry={() => fetchData('history')} />;
     if (historyData.length === 0) return <RestDayView title="No History Found" />;
 
@@ -181,59 +182,6 @@ const WodContainer: React.FC = () => {
 };
 
 // Sub-components
-const LoadingSkeleton = ({ mode = 'today', count = 1 }: { mode?: 'today' | 'history', count?: number }) => {
-  if (mode === 'today') {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="bg-brand-dark border border-brand-border rounded-2xl overflow-hidden shadow-xl">
-          {/* Header Skeleton */}
-          <div className="bg-brand-accent/10 p-6 flex justify-between items-center border-b border-brand-border">
-            <div className="space-y-2">
-              <div className="h-3 w-24 bg-brand-accent/20 rounded animate-pulse" />
-              <div className="h-6 w-48 bg-brand-accent/30 rounded animate-pulse" />
-            </div>
-            <div className="w-10 h-10 bg-brand-accent/10 rounded-full animate-pulse" />
-          </div>
-          
-          {/* Workout details Skeleton */}
-          <div className="p-6 md:p-8 space-y-4">
-            <div className="h-4 bg-brand-surface rounded w-3/4 animate-pulse" />
-            <div className="h-4 bg-brand-surface rounded w-full animate-pulse" />
-            <div className="h-4 bg-brand-surface rounded w-5/6 animate-pulse" />
-            <div className="h-4 bg-brand-surface rounded w-2/3 animate-pulse" />
-            <div className="h-4 bg-brand-surface rounded w-1/2 animate-pulse" />
-            
-            {/* Coach tips Skeleton */}
-            <div className="mt-8 bg-brand-accent/5 border-l-4 border-brand-accent/20 p-5 rounded-r-xl space-y-2">
-              <div className="h-3 bg-brand-accent/20 rounded w-28 animate-pulse" />
-              <div className="h-3.5 bg-brand-surface rounded w-full animate-pulse" />
-              <div className="h-3.5 bg-brand-surface rounded w-5/6 animate-pulse" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // History mode skeleton list
-  return (
-    <div className="space-y-3 animate-pulse">
-      {[...Array(count)].map((_, i) => (
-        <div key={i} className="bg-brand-dark/50 border border-brand-border rounded-xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-9 h-9 bg-brand-accent/10 rounded-lg animate-pulse" />
-            <div className="space-y-2">
-              <div className="h-2.5 bg-brand-surface/50 rounded w-20 animate-pulse" />
-              <div className="h-4 bg-brand-surface rounded w-36 animate-pulse" />
-            </div>
-          </div>
-          <div className="w-5 h-5 bg-brand-surface/30 rounded animate-pulse" />
-        </div>
-      ))}
-    </div>
-  );
-};
-
 const ErrorView = ({ message, onRetry }: { message: string, onRetry: () => void }) => (
   <div className="text-center py-12 px-6 bg-brand-danger/5 border border-brand-danger/20 rounded-2xl">
     <p className="text-brand-danger font-bold mb-4">{message}</p>
