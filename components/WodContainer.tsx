@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   DumbbellIcon, 
   CalendarIcon, 
@@ -7,11 +7,21 @@ import {
   ChevronDownIcon, 
   ChevronUpIcon,
   QuoteIcon,
-  ClockIcon
+  ClockIcon,
+  RefreshIcon,
+  WifiOffIcon
 } from './Icons';
 import { WodEntry } from '../types';
 import { WOD_SCRIPT_URL } from '../constants';
 import FitnessLoader from './FitnessLoader';
+import { 
+  getCachedWodToday, 
+  setCachedWodToday, 
+  getCachedWodHistory, 
+  setCachedWodHistory, 
+  formatTimeAgo,
+  isCacheExpired
+} from '../utils/cache';
 
 type WodMode = 'today' | 'history';
 
@@ -20,50 +30,154 @@ const WodContainer: React.FC = () => {
   const [todayData, setTodayData] = useState<WodEntry | null>(null);
   const [historyData, setHistoryData] = useState<WodEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<number | null>(null);
+  const [networkNotice, setNetworkNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRestDay, setIsRestDay] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  const fetchData = async (targetMode: WodMode) => {
+  const fetchData = useCallback(async (targetMode: WodMode, forceRefresh = false) => {
     if (!WOD_SCRIPT_URL) {
       setError("WOD service URL is not configured.");
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    setIsRestDay(false);
+    // 1. Check localStorage and evaluate expiration (ExpiresAt / 24 hours)
+    let hasValidCache = false;
+    let expiredFallback: { entry?: WodEntry | null; isRestDay?: boolean; history?: WodEntry[]; timestamp: number } | null = null;
 
+    if (targetMode === 'today') {
+      const cached = getCachedWodToday();
+      if (cached) {
+        const expired = isCacheExpired(cached);
+        if (!expired && !forceRefresh) {
+          hasValidCache = true;
+          setTodayData(cached.data.entry);
+          setIsRestDay(cached.data.isRestDay);
+          setCacheTimestamp(cached.timestamp);
+        } else if (expired) {
+          console.log('[WodContainer] Cached today WOD is older than 24h. Performing fresh fetch on load...');
+          expiredFallback = {
+            entry: cached.data.entry,
+            isRestDay: cached.data.isRestDay,
+            timestamp: cached.timestamp
+          };
+        }
+      }
+    } else {
+      const cached = getCachedWodHistory();
+      if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
+        const expired = isCacheExpired(cached);
+        if (!expired && !forceRefresh) {
+          hasValidCache = true;
+          setHistoryData(cached.data);
+          setCacheTimestamp(cached.timestamp);
+        } else if (expired) {
+          console.log('[WodContainer] Cached history is older than 24h. Performing fresh fetch on load...');
+          expiredFallback = {
+            history: cached.data,
+            timestamp: cached.timestamp
+          };
+        }
+      }
+    }
+
+    if (hasValidCache) {
+      // Valid cache (< 24 hours old): Display immediately and refresh in background
+      setLoading(false);
+      setIsRefreshing(true);
+      setError(null);
+    } else {
+      // Data is missing, explicitly forced, or older than 24 hours:
+      // Perform a fresh fetch regardless of network state upon next load
+      setLoading(true);
+      setIsRefreshing(false);
+      setError(null);
+      setIsRestDay(false);
+    }
+
+    // 2. Fresh Network Fetch
     try {
-      const response = await fetch(`${WOD_SCRIPT_URL}?mode=${targetMode}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+      const response = await fetch(`${WOD_SCRIPT_URL}?mode=${targetMode}`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
       if (!response.ok) throw new Error("Failed to fetch WOD data");
       
       const result = await response.json();
+      const now = Date.now();
+
       if (result.success) {
         if (targetMode === 'today') {
           setTodayData(result.data);
+          setIsRestDay(false);
+          setCachedWodToday(result.data, false);
         } else {
           setHistoryData(result.data || []);
+          setCachedWodHistory(result.data || []);
         }
+        setCacheTimestamp(now);
+        setNetworkNotice(null);
+        setError(null);
       } else {
         // Handle "No WOD found" as a rest day rather than a technical error
         if (targetMode === 'today' && result.message?.includes('No WOD found')) {
           setTodayData(null);
           setIsRestDay(true);
+          setCachedWodToday(null, true);
+          setCacheTimestamp(now);
+          setNetworkNotice(null);
+          setError(null);
         } else {
-          setError(result.error || result.message || "No WOD data available at the moment.");
+          if (!hasValidCache) {
+            if (expiredFallback) {
+              if (targetMode === 'today') {
+                setTodayData(expiredFallback.entry || null);
+                setIsRestDay(Boolean(expiredFallback.isRestDay));
+              } else {
+                setHistoryData(expiredFallback.history || []);
+              }
+              setCacheTimestamp(expiredFallback.timestamp);
+              setNetworkNotice("Workout update unavailable. Displaying older cached version.");
+            } else {
+              setError(result.error || result.message || "No WOD data available at the moment.");
+            }
+          } else {
+            setNetworkNotice("Latest workout update unavailable. Showing saved version.");
+          }
         }
       }
-    } catch (err) {
-      setError("Unable to connect to workout service. Please try again later.");
+    } catch (err: any) {
+      console.warn(`[WodContainer] Network fetch failed for ${targetMode}:`, err.message);
+      if (hasValidCache) {
+        setNetworkNotice("Network slow or unavailable. Displaying cached workout.");
+      } else if (expiredFallback) {
+        // Cache expired (> 24h) and network was unavailable: fall back with explicit outdated notice
+        if (targetMode === 'today') {
+          setTodayData(expiredFallback.entry || null);
+          setIsRestDay(Boolean(expiredFallback.isRestDay));
+        } else {
+          setHistoryData(expiredFallback.history || []);
+        }
+        setCacheTimestamp(expiredFallback.timestamp);
+        setNetworkNotice("Workout data is older than 24 hours and could not be refreshed. Please check your internet connection.");
+      } else {
+        setError("Unable to connect to workout service. Please check your connection.");
+      }
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData(mode);
-  }, [mode]);
+  }, [mode, fetchData]);
 
   const toggleAccordion = (index: number) => {
     setExpandedIndex(expandedIndex === index ? null : index);
@@ -71,7 +185,7 @@ const WodContainer: React.FC = () => {
 
   const renderToday = () => {
     if (loading) return <FitnessLoader type="random" label="Loading Today's Workout..." sublabel="CROSSFIT LAGOS" />;
-    if (error) return <ErrorView message={error} onRetry={() => fetchData('today')} />;
+    if (error && !todayData && !isRestDay) return <ErrorView message={error} onRetry={() => fetchData('today', true)} />;
     if (isRestDay || !todayData) return <RestDayView />;
 
     return (
@@ -111,7 +225,7 @@ const WodContainer: React.FC = () => {
 
   const renderHistory = () => {
     if (loading) return <FitnessLoader type="random" label="Loading Workout History..." sublabel="CROSSFIT LAGOS" />;
-    if (error) return <ErrorView message={error} onRetry={() => fetchData('history')} />;
+    if (error && historyData.length === 0) return <ErrorView message={error} onRetry={() => fetchData('history', true)} />;
     if (historyData.length === 0) return <RestDayView title="No History Found" />;
 
     return (
@@ -154,10 +268,37 @@ const WodContainer: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto pb-12">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
          <div>
-            <h2 className="text-3xl font-black text-brand-textPrimary tracking-tight">Whiteboard</h2>
-            <p className="text-brand-textSecondary font-medium">Get Fit. Stay Strong.</p>
+            <div className="flex items-center gap-3">
+              <h2 className="text-3xl font-black text-brand-textPrimary tracking-tight">Whiteboard</h2>
+              <button
+                onClick={() => fetchData(mode, true)}
+                disabled={isRefreshing || loading}
+                title="Refresh workouts"
+                className="p-1.5 rounded-lg bg-brand-surface text-brand-textSecondary hover:text-brand-textPrimary hover:bg-white/10 transition-colors disabled:opacity-50"
+              >
+                <RefreshIcon className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-brand-accent' : ''}`} />
+              </button>
+            </div>
+            
+            {/* Cache status & background sync indicator */}
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <p className="text-brand-textSecondary text-sm font-medium">Get Fit. Stay Strong.</p>
+              {cacheTimestamp && (
+                <>
+                  <span className="text-brand-textSecondary/40 text-xs">•</span>
+                  <span className="text-xs text-brand-textSecondary/80">
+                    Saved {formatTimeAgo(cacheTimestamp)}
+                  </span>
+                </>
+              )}
+              {isRefreshing && (
+                <span className="inline-flex items-center gap-1 text-xs text-brand-accent font-medium animate-pulse">
+                  • Syncing...
+                </span>
+              )}
+            </div>
          </div>
          
          <div className="flex bg-brand-dark p-1 rounded-xl border border-brand-border shadow-inner">
@@ -175,6 +316,22 @@ const WodContainer: React.FC = () => {
             </button>
          </div>
       </header>
+
+      {/* Network / Offline Notice banner if displaying cached content during network trouble */}
+      {networkNotice && (
+        <div className="mb-6 p-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300 animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <WifiOffIcon className="w-4 h-4 flex-shrink-0 text-amber-400" />
+            <span>{networkNotice}</span>
+          </div>
+          <button 
+            onClick={() => fetchData(mode, true)}
+            className="font-bold underline hover:text-white ml-2 flex-shrink-0"
+          >
+            Retry Sync
+          </button>
+        </div>
+      )}
 
       {mode === 'today' ? renderToday() : renderHistory()}
     </div>
@@ -204,3 +361,4 @@ const RestDayView = ({ title = "Enjoy Your Rest Day!" }) => (
 );
 
 export default WodContainer;
+

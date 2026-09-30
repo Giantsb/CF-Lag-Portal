@@ -23,12 +23,14 @@ import {
   TagIcon,
   SupportChatIcon,
   ProfilePlaceholder,
-  AlertCircleIcon
+  AlertCircleIcon,
+  XCircleIcon
 } from './Icons';
 import { MemberData, PauseStatus } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
 import { getPauseStatus, updateEmail } from '../services/membershipService';
 import { hashPin } from '../utils/encryption';
+import { getCachedPauseStatus, setCachedPauseStatus } from '../utils/cache';
 import ThemeToggle from './ThemeToggle';
 import ThemeToggleSwitch from './ThemeToggleSwitch';
 import WodContainer from './WodContainer';
@@ -80,8 +82,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
   const [copied, setCopied] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies' | 'wod'>('dashboard');
   const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
-  const [pauseStatus, setPauseStatus] = useState<string>('Loading...');
-  const [pauseDate, setPauseDate] = useState<string>('');
+  const cachedPause = getCachedPauseStatus(member.phone);
+  const [pauseStatus, setPauseStatus] = useState<string>(cachedPause?.data.status || 'None');
+  const [pauseDate, setPauseDate] = useState<string>(cachedPause?.data.date || '');
 
   // Email update states
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -243,8 +246,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
 
         setPauseStatus(status);
         setPauseDate(dateStr || '');
+        setCachedPauseStatus(member.phone, { status, date: dateStr || '' });
       } catch (err) {
-        setPauseStatus('Error');
+        // If fetch fails, keep cached value without error flashing
+        if (!cachedPause) {
+          setPauseStatus('None');
+        }
       }
     };
     

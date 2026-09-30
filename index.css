@@ -1,0 +1,4 @@
+/* Global stylesheet and utility overrides */
+:root {
+  -webkit-tap-highlight-color: transparent;
+}

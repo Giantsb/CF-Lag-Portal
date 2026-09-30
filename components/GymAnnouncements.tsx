@@ -8,10 +8,12 @@ import {
 } from './Icons';
 import { Announcement } from '../types';
 import { WOD_SCRIPT_URL } from '../constants';
+import { getCachedAnnouncements, setCachedAnnouncements } from '../utils/cache';
 
 const GymAnnouncements: React.FC = () => {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = getCachedAnnouncements();
+  const [announcements, setAnnouncements] = useState<Announcement[]>(cached?.data || []);
+  const [loading, setLoading] = useState(!cached);
   const [dismissedTitles, setDismissedTitles] = useState<string[]>([]);
   const [seenTitles, setSeenTitles] = useState<string[]>([]);
 
@@ -52,6 +54,7 @@ const GymAnnouncements: React.FC = () => {
           if (result.success && result.data && Array.isArray(result.data.announcements)) {
             const dataList = result.data.announcements;
             setAnnouncements(dataList);
+            setCachedAnnouncements(dataList);
             
             // Mark these as "seen" after 5 seconds of being displayed
             setTimeout(() => {

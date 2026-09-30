@@ -6,6 +6,7 @@ import DashboardView from './components/DashboardView';
 import InstallPrompt from './components/InstallPrompt';
 import { ViewState, MemberData } from './types';
 import { getMemberByPhone } from './services/membershipService';
+import { getCachedMember, setCachedMember, clearCachedMember } from './utils/cache';
 
 function App() {
   const [viewState, setViewState] = useState<ViewState>(ViewState.LOGIN);
@@ -22,30 +23,58 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, []);
 
-  // Check for persisted session via LocalStorage
+  // Check for persisted session via LocalStorage with instant cache hydration & background fetch
   useEffect(() => {
     const checkSession = async () => {
-       const localSession = localStorage.getItem('hoa_session');
-       if (localSession) {
-          try {
-             const session = JSON.parse(localSession);
-             const portalType = session.portalType || 'member';
-             if (session.expiry > new Date().getTime()) {
-                const member = await getMemberByPhone(session.phone, portalType);
-                if (member) {
-                   setMemberData(member);
-                   setViewState(ViewState.DASHBOARD);
-                } else {
-                   localStorage.removeItem('hoa_session');
-                }
-             } else {
-                localStorage.removeItem('hoa_session');
-             }
-          } catch (e) {
-             localStorage.removeItem('hoa_session');
+      const localSession = localStorage.getItem('hoa_session');
+      if (!localSession) {
+        setIsSessionLoading(false);
+        return;
+      }
+
+      try {
+        const session = JSON.parse(localSession);
+        const portalType = session.portalType || 'member';
+
+        if (session.expiry <= new Date().getTime()) {
+          localStorage.removeItem('hoa_session');
+          clearCachedMember();
+          setIsSessionLoading(false);
+          return;
+        }
+
+        // 1. Instant Cache Hydration: If cached member data exists, display immediately!
+        const cached = getCachedMember(session.phone);
+        let hasDisplayedFromCache = false;
+        if (cached && cached.data) {
+          setMemberData(cached.data);
+          setViewState(ViewState.DASHBOARD);
+          setIsSessionLoading(false);
+          hasDisplayedFromCache = true;
+        }
+
+        // 2. Background Revalidation: Fetch fresh member data asynchronously
+        try {
+          const freshMember = await getMemberByPhone(session.phone, portalType);
+          if (freshMember) {
+            setMemberData(freshMember);
+            setCachedMember(freshMember);
+            setViewState(ViewState.DASHBOARD);
+          } else if (!hasDisplayedFromCache) {
+            // Only clear session if we have no cached profile and the backend says not found
+            localStorage.removeItem('hoa_session');
+            clearCachedMember();
           }
-       }
-       setIsSessionLoading(false);
+        } catch (fetchErr) {
+          console.warn('[App] Background session revalidation failed (offline/slow network):', fetchErr);
+          // If we already displayed from cache, preserve their session and view!
+        }
+      } catch (e) {
+        console.error('[App] Failed to parse session:', e);
+        localStorage.removeItem('hoa_session');
+      } finally {
+        setIsSessionLoading(false);
+      }
     };
 
     checkSession();
@@ -57,6 +86,7 @@ function App() {
        portalType: portalType,
        expiry: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
     }));
+    setCachedMember(data);
     setMemberData(data);
     setViewState(ViewState.DASHBOARD);
   };
@@ -65,7 +95,6 @@ function App() {
     setSetupPhone(phone);
     setIsResetMode(false);
     setViewState(ViewState.SETUP_PIN);
-    // We could pass portalType to state if needed for PinSetupView
     localStorage.setItem('hoa_portal_type', portalType);
   };
 
@@ -78,6 +107,7 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('hoa_session');
+    clearCachedMember();
     setMemberData(null);
     setSetupPhone('');
     setIsResetMode(false);
@@ -87,6 +117,7 @@ function App() {
   const handleSetupSuccess = (member: MemberData) => {
     const portalType = localStorage.getItem('hoa_portal_type') || 'member';
     
+    setCachedMember(member);
     setMemberData(member);
     setViewState(ViewState.DASHBOARD);
     setSetupPhone('');
@@ -100,6 +131,11 @@ function App() {
     
     // Clean up temporary portal type
     localStorage.removeItem('hoa_portal_type');
+  };
+
+  const handleUpdateMemberData = (updated: MemberData) => {
+    setMemberData(updated);
+    setCachedMember(updated);
   };
 
   const handleSetupBack = () => {
@@ -139,7 +175,7 @@ function App() {
         <DashboardView 
           member={memberData} 
           onLogout={handleLogout} 
-          onUpdateMemberData={setMemberData}
+          onUpdateMemberData={handleUpdateMemberData}
         />
       )}
 
