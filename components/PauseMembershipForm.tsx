@@ -182,9 +182,14 @@ const PauseMembershipForm: React.FC<PauseMembershipFormProps> = ({ member, onClo
           ) : (
             <div className="bg-brand-surface border border-brand-border p-4 rounded-2xl mb-6 flex gap-3 items-start">
                <InfoIcon className="w-5 h-5 text-brand-accent shrink-0 mt-0.5" />
-               <p className="text-[11px] text-brand-textSecondary leading-relaxed font-medium">
-                 Submitting this form does not instantly pause your membership. Our staff will review your request according to the gym policy.
-               </p>
+               <div className="text-[11px] text-brand-textSecondary leading-relaxed font-medium space-y-1.5">
+                 <p>Submitting this form does not instantly pause your membership. Our staff will review your request according to the gym policy.</p>
+                 {member.package?.toLowerCase().includes('weekend') && (
+                   <p className="text-amber-500/90 font-medium border-t border-brand-border/40 pt-1.5">
+                     <strong>Weekend Package Note:</strong> Clients on the Weekend monthly plan are generally not eligible to pause subscriptions unless paid for multiple months in advance (reviewed on a case-by-case basis).
+                   </p>
+                 )}
+               </div>
             </div>
           )}
 

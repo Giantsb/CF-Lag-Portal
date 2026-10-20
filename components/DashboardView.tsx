@@ -956,7 +956,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
                                 </ul>
                             </div>
 
-                            <div className="bg-brand-black/20 p-5 rounded-2xl border border-brand-border">
+                            <div className="bg-brand-black/20 p-5 rounded-2xl border border-brand-border mb-6">
                                <h4 className="text-brand-textPrimary font-black text-[10px] uppercase mb-4 tracking-widest">Allowed Pause Duration</h4>
                                <ul className="space-y-3 text-xs text-brand-textSecondary font-bold">
                                   <li className="flex justify-between"><span>Monthly Plans</span> <span className="text-brand-accent">14 Days</span></li>
@@ -964,6 +964,22 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
                                   <li className="flex justify-between"><span>12 Month Plans</span> <span className="text-brand-accent">14–25 Days</span></li>
                                 </ul>
                                <p className="text-[10px] text-brand-textSecondary italic mt-4 opacity-70">Note: Only one pause is allowed per membership cycle.</p>
+                            </div>
+
+                            <div className="bg-brand-black/20 p-5 rounded-2xl border border-brand-border">
+                               <h4 className="text-brand-textPrimary font-black text-[10px] uppercase mb-3 tracking-widest flex items-center justify-between">
+                                  <span>Weekend Package (2 Sessions Per Week)</span>
+                                  <span className="text-[9px] bg-amber-500/15 text-amber-500 px-2 py-0.5 rounded-md font-bold">Policy</span>
+                               </h4>
+                               <p className="text-xs text-brand-textSecondary font-medium leading-relaxed mb-3">
+                                  Clients on the Weekend monthly membership plan are <strong className="text-brand-textPrimary font-bold">not eligible to pause their subscriptions</strong>.
+                               </p>
+                               <p className="text-xs text-brand-textSecondary font-medium leading-relaxed mb-3">
+                                  However, consideration may be given to clients who have paid for multiple months in advance (e.g., two months or more). Such requests will be reviewed on a case-by-case basis and are subject to management approval.
+                               </p>
+                               <p className="text-[11px] text-brand-textSecondary/80 italic border-t border-brand-border/40 pt-3">
+                                  Please note that approval is not automatic, and all requests must be submitted through the gym’s designated subscription pause request process.
+                               </p>
                             </div>
                          </section>
 
