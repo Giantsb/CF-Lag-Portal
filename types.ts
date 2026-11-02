@@ -27,6 +27,7 @@ export interface Announcement {
   datePosted: string;
   expiryDate?: string;
   isNew?: boolean;
+  audience?: 'ALL' | 'HMO' | 'MEMBER' | string;
 }
 
 export enum ViewState {

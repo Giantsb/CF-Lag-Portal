@@ -608,7 +608,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
                  </header>
 
                  {/* Announcement Section */}
-                 <GymAnnouncements />
+                 <GymAnnouncements portalType={portalType} isHmo={isHmo} />
 
                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* MERGED CARD: Status + Identity + Expiry */}

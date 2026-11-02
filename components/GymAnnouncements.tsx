@@ -10,12 +10,35 @@ import { Announcement } from '../types';
 import { WOD_SCRIPT_URL } from '../constants';
 import { getCachedAnnouncements, setCachedAnnouncements } from '../utils/cache';
 
-const GymAnnouncements: React.FC = () => {
+interface GymAnnouncementsProps {
+  portalType?: 'member' | 'hmo';
+  isHmo?: boolean;
+}
+
+const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({ portalType, isHmo }) => {
   const cached = getCachedAnnouncements();
   const [announcements, setAnnouncements] = useState<Announcement[]>(cached?.data || []);
   const [loading, setLoading] = useState(!cached);
   const [dismissedTitles, setDismissedTitles] = useState<string[]>([]);
   const [seenTitles, setSeenTitles] = useState<string[]>([]);
+
+  // Determine user portal status
+  let userIsHmo = isHmo;
+  if (userIsHmo === undefined) {
+    if (portalType) {
+      userIsHmo = portalType === 'hmo';
+    } else {
+      try {
+        const session = localStorage.getItem('hoa_session');
+        if (session) {
+          const parsed = JSON.parse(session);
+          userIsHmo = parsed.portalType === 'hmo';
+        }
+      } catch (e) {
+        userIsHmo = false;
+      }
+    }
+  }
 
   useEffect(() => {
     // Load dismissed and seen titles from localStorage for persistence
@@ -82,9 +105,21 @@ const GymAnnouncements: React.FC = () => {
     localStorage.setItem('gym_dismissed_announcements', JSON.stringify(updatedDismissed));
   };
 
-  const activeAnnouncements = announcements.filter(
-    a => a.type === 'urgent' || !dismissedTitles.includes(a.title)
-  );
+  const activeAnnouncements = announcements.filter(a => {
+    // 1. Audience filtering
+    const targetAudience = (a.audience || 'ALL').toString().trim().toUpperCase();
+    if (targetAudience !== 'ALL') {
+      if (userIsHmo && targetAudience !== 'HMO') {
+        return false;
+      }
+      if (!userIsHmo && (targetAudience === 'HMO')) {
+        return false;
+      }
+    }
+
+    // 2. Dismissal filtering
+    return a.type === 'urgent' || !dismissedTitles.includes(a.title);
+  });
 
   if (loading || activeAnnouncements.length === 0) {
     return null;
