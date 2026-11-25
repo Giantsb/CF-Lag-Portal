@@ -5,7 +5,9 @@ import {
   AlertCircleIcon, 
   InfoIcon, 
   XIcon,
-  WhatsAppIcon
+  WhatsAppIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from './Icons';
 import { Announcement } from '../types';
 import { WOD_SCRIPT_URL } from '../constants';
@@ -162,14 +164,22 @@ const renderFormattedMessage = (text: string, isUrgent: boolean): React.ReactNod
 interface GymAnnouncementsProps {
   portalType?: 'member' | 'hmo';
   isHmo?: boolean;
+  onHasAnnouncementsChange?: (hasLive: boolean) => void;
+  className?: string;
 }
 
-const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({ portalType, isHmo }) => {
+const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({
+  portalType,
+  isHmo,
+  onHasAnnouncementsChange,
+  className,
+}) => {
   const cached = getCachedAnnouncements();
   const [announcements, setAnnouncements] = useState<Announcement[]>(cached?.data || []);
   const [loading, setLoading] = useState(!cached);
   const [dismissedTitles, setDismissedTitles] = useState<string[]>([]);
   const [seenTitles, setSeenTitles] = useState<string[]>([]);
+  const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
 
   // Determine user portal status
   let userIsHmo = isHmo;
@@ -254,6 +264,13 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({ portalType, isHmo }
     localStorage.setItem('gym_dismissed_announcements', JSON.stringify(updatedDismissed));
   };
 
+  const toggleExpand = (key: string) => {
+    setExpandedKeys((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
   const activeAnnouncements = announcements.filter(a => {
     // 1. Audience filtering
     const targetAudience = (a.audience || 'ALL').toString().trim().toUpperCase();
@@ -270,12 +287,18 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({ portalType, isHmo }
     return a.type === 'urgent' || !dismissedTitles.includes(a.title);
   });
 
-  if (loading || activeAnnouncements.length === 0) {
+  const hasLive = !loading && activeAnnouncements.length > 0;
+
+  useEffect(() => {
+    onHasAnnouncementsChange?.(hasLive);
+  }, [hasLive, onHasAnnouncementsChange]);
+
+  if (!hasLive) {
     return null;
   }
 
   return (
-    <div className="space-y-4 mb-6 animate-fadeIn">
+    <div className={className || 'space-y-4 animate-fadeIn'}>
       {activeAnnouncements.map((announcement, index) => {
         const isUrgent = announcement.type === 'urgent';
         const isWarning = announcement.type === 'warning';
@@ -303,10 +326,22 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({ portalType, isHmo }
           Icon = BellIcon;
         }
 
+        const glowClass = isUrgent
+          ? 'announcement-glow-urgent'
+          : isWarning
+            ? 'announcement-glow-warning'
+            : 'announcement-glow-info';
+
+        const itemKey = `${announcement.title || 'announcement'}-${index}`;
+        const messageText = (announcement.message || '').trim();
+        const lineCount = messageText.split(/\r?\n/).length;
+        const isLongMessage = messageText.length > 110 || lineCount > 3;
+        const isExpanded = Boolean(expandedKeys[itemKey]);
+
         return (
           <div 
-            key={index}
-            className={`relative p-5 rounded-2xl border ${borderColor} ${bgColor} ${textColor} animate-slideInDown transition-all overflow-hidden group`}
+            key={itemKey}
+            className={`relative p-5 rounded-3xl border ${borderColor} ${bgColor} ${textColor} ${glowClass} animate-announcement-card transition-all overflow-hidden group flex-1 flex flex-col justify-center`}
           >
             {isUrgent && (
               <div className="absolute top-0 right-0 p-1 opacity-10 transform translate-x-1/4 -translate-y-1/4">
@@ -315,11 +350,11 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({ portalType, isHmo }
             )}
 
             <div className="flex gap-4 relative z-10">
-              <div className={`shrink-0 p-2 rounded-xl ${isUrgent ? 'bg-white/20' : 'bg-brand-surface'} ${isUrgent ? 'animate-pulse' : ''}`}>
+              <div className={`shrink-0 p-2 rounded-xl self-start ${isUrgent ? 'bg-white/20 animate-pulse' : 'bg-brand-surface'}`}>
                 <Icon className={`w-6 h-6 ${iconColor}`} />
               </div>
 
-              <div className="flex-1 pr-6">
+              <div className="flex-1 pr-6 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h4 className={`font-black uppercase tracking-tight ${isUrgent ? 'text-white' : 'text-brand-textPrimary'}`}>
                     {announcement.title}
@@ -330,9 +365,33 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({ portalType, isHmo }
                     </span>
                   )}
                 </div>
-                <div className={`text-sm leading-relaxed whitespace-pre-wrap ${isUrgent ? 'text-white/90 font-medium' : 'text-brand-textSecondary'}`}>
+                <div
+                  className={`text-sm leading-relaxed whitespace-pre-wrap transition-all ${
+                    isUrgent ? 'text-white/90 font-medium' : 'text-brand-textSecondary'
+                  } ${isLongMessage && !isExpanded ? 'line-clamp-3' : ''}`}
+                >
                   {renderFormattedMessage(announcement.message, isUrgent)}
                 </div>
+
+                {isLongMessage && (
+                  <button
+                    type="button"
+                    onClick={() => toggleExpand(itemKey)}
+                    aria-expanded={isExpanded}
+                    className={`mt-2 inline-flex items-center gap-1 text-xs font-bold transition-colors ${
+                      isUrgent
+                        ? 'text-white hover:text-white/80'
+                        : 'text-brand-accent hover:text-brand-accentHover'
+                    }`}
+                  >
+                    <span>{isExpanded ? 'Show less' : 'Read more'}</span>
+                    {isExpanded ? (
+                      <ChevronUpIcon className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronDownIcon className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                )}
 
                 {whatsAppAction && (
                   <div className="mt-3 flex items-center">

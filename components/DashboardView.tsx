@@ -6,8 +6,6 @@ import {
   ActivityIcon, 
   PhoneIcon, 
   ClockIcon,
-  CopyIcon,
-  CheckCircleIcon,
   MenuIcon,
   XIcon,
   HomeIcon,
@@ -37,6 +35,7 @@ import WodContainer from './WodContainer';
 import GymAnnouncements from './GymAnnouncements';
 import PauseMembershipForm from './PauseMembershipForm';
 import PricingView from './PricingView';
+import RenewModal from './RenewModal';
 import { 
   format, addMonths, subMonths, startOfMonth, endOfMonth, 
   startOfWeek, endOfWeek, isSameMonth, addDays, 
@@ -78,8 +77,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [isBottomMenuOpen, setIsBottomMenuOpen] = useState(false);
+  const [hasLiveAnnouncements, setHasLiveAnnouncements] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies' | 'wod'>('dashboard');
   const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
   const cachedPause = getCachedPauseStatus(member.phone);
@@ -359,11 +358,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
   };
 
   const nextClassInfo = getNextClass();
-  const handleCopy = () => {
-    navigator.clipboard.writeText('0078409920');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const renderCalendarHeader = () => (
     <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -546,73 +540,59 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
     );
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsBottomMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-brand-black text-brand-textPrimary flex transition-colors duration-300">
-      <div className="lg:hidden fixed top-0 w-full bg-brand-dark z-50 px-4 py-3 flex items-center gap-4 border-b border-brand-border">
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-brand-textPrimary p-1">{isSidebarOpen ? <XIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}</button>
-        <div className="flex items-center gap-2"><DumbbellIcon className="w-8 h-8 text-brand-accent" /><span className="font-bold text-lg text-brand-textPrimary">CrossFit Lagos</span></div>
-      </div>
-
-      <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-brand-dark border-r border-brand-border transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col pt-16 lg:pt-0`}>
-         <div className="px-6 py-8 mb-2 flex flex-col items-center text-center border-b border-brand-border/50 hidden lg:flex">
-            <div className="w-20 h-20 rounded-2xl overflow-hidden bg-brand-black/20 flex items-center justify-center border border-white/10 mb-4 shadow-xl">
-              <ProfilePlaceholder className="w-12 h-12 text-brand-accent" />
+    <div className="min-h-screen bg-brand-black text-brand-textPrimary flex flex-col transition-colors duration-300">
+      {/* Top Brand Header */}
+      <header className="fixed top-0 inset-x-0 z-40 bg-brand-dark/95 backdrop-blur-md border-b border-brand-border">
+        <div className="max-w-5xl mx-auto px-4 lg:px-8 h-16 flex items-center justify-between gap-4">
+          <button
+            onClick={() => { setCurrentView('dashboard'); setIsBottomMenuOpen(false); }}
+            className="flex items-center gap-2.5 text-left group"
+          >
+            <DumbbellIcon className="w-7 h-7 text-brand-accent transition-transform group-hover:scale-105" />
+            <div>
+              <span className="font-bold text-base sm:text-lg text-brand-textPrimary leading-none block">CrossFit Lagos</span>
+              <span className="text-[10px] text-brand-textSecondary uppercase tracking-widest hidden sm:block">
+                {member.firstName} {member.lastName} · {member.package || 'Member'}
+              </span>
             </div>
-            <h4 className="font-bold text-brand-textPrimary leading-tight">{member.firstName} {member.lastName}</h4>
-            <p className="text-[10px] text-brand-textSecondary uppercase tracking-widest mt-1">{member.package}</p>
-            <ThemeToggleSwitch className="mt-4" />
-         </div>
-          <nav className="flex-1 px-4 py-4 space-y-2">
-            <button onClick={() => { setCurrentView('dashboard'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-[#e0f2fe] text-[#0284c7] font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><HomeIcon className="w-5 h-5" /><span className={currentView === 'dashboard' ? 'text-[#1b1b1f]' : ''}>Dashboard</span></button>
-            
-            {/* Restricted Content: WOD is only visible for valid members */}
-            {isValid && (
-              <button onClick={() => { setCurrentView('wod'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'wod' ? 'bg-[#e0f2fe] text-[#0284c7] font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><DumbbellIcon className="w-5 h-5" /><span className={currentView === 'wod' ? 'text-[#1b1b1f]' : ''}>Workout (WOD)</span></button>
-            )}
+          </button>
 
-            <button onClick={() => { setCurrentView('schedule'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'schedule' ? 'bg-[#e0f2fe] text-[#0284c7] font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><CalendarIcon className="w-5 h-5" /><span className={currentView === 'schedule' ? 'text-[#1b1b1f]' : ''}>Schedule</span></button>
-            
-            {!isHmo && (
-              <>
-                <button onClick={() => { setShowPauseModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><PauseCircleIcon className="w-5 h-5" />Pause Membership</button>
-                <button onClick={() => { setShowPaymentModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><CreditCardIcon className="w-5 h-5" />Renew</button>
-              </>
-            )}
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
 
-            <button onClick={() => { setCurrentView('policies'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'policies' ? 'bg-[#e0f2fe] text-[#0284c7] font-bold' : 'text-brand-textSecondary hover:bg-brand-surface'}`}><FileTextIcon className="w-5 h-5" /><span className={currentView === 'policies' ? 'text-[#1b1b1f]' : ''}>Policies</span></button>
-            <button onClick={() => { setShowPricingModal(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><TagIcon className="w-5 h-5" />Pricing</button>
-            <a href="https://wa.me/2347059969059" target="_blank" rel="noreferrer" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-textSecondary hover:bg-brand-surface"><PhoneIcon className="w-5 h-5" />Support</a>
-         </nav>
-         <div className="p-4 border-t border-brand-border">
-            <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-danger hover:bg-brand-danger/10 transition-colors"><LogOutIcon className="w-5 h-5" />Logout</button>
-         </div>
-      </aside>
-
-      <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-8 overflow-y-auto">
+      <main className="flex-1 px-4 pt-20 pb-28 lg:px-8 lg:pt-24 lg:pb-32 overflow-y-auto">
          <div className="max-w-5xl mx-auto">
             {currentView === 'dashboard' && (
               <div className="space-y-6">
                  <header className="flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-brand-black/20 flex items-center justify-center border border-white/10 lg:hidden">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-brand-black/20 flex items-center justify-center border border-white/10">
                         <ProfilePlaceholder className="w-8 h-8 text-brand-accent" />
                       </div>
                       <div>
-                        <h2 className="text-3xl font-bold text-brand-textPrimary">Dashboard</h2>
-                        <p className="text-brand-textSecondary">Welcome back, <span className="text-brand-accent font-bold">{member.firstName}</span></p>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-brand-textPrimary">Dashboard</h2>
+                        <p className="text-brand-textSecondary text-sm sm:text-base">Welcome back, <span className="text-brand-accent font-bold">{member.firstName}</span></p>
                       </div>
-                    </div>
-                    <div className="flex items-center">
-                      <ThemeToggle />
                     </div>
                  </header>
 
-                 {/* Announcement Section */}
-                 <GymAnnouncements portalType={portalType} isHmo={isHmo} />
-
-                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
                     {/* MERGED CARD: Status + Identity + Expiry */}
-                    <div className={`lg:col-span-2 p-6 rounded-3xl border border-brand-border hover:border-brand-accent/30 ${bgColor} flex flex-col justify-between min-h-[180px] shadow-lg relative overflow-hidden transition-all duration-300`}>
+                    <div className={`${hasLiveAnnouncements ? 'lg:col-span-2' : 'lg:col-span-3'} p-6 rounded-3xl border border-brand-border hover:border-brand-accent/30 ${bgColor} flex flex-col justify-between min-h-[180px] shadow-lg relative overflow-hidden transition-all duration-300`}>
                       {/* Background Decoration */}
                       <div className="absolute top-0 right-0 p-4 opacity-5">
                         <UserIcon className="w-32 h-32" />
@@ -751,51 +731,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
                       </div>
                     </div>
 
-                    <div className="p-6 rounded-3xl border border-brand-border bg-brand-dark flex flex-col justify-between min-h-[180px] shadow-md transition-all duration-300 hover:shadow-lg">
-                      <div className="flex justify-between items-start">
-                        <span className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest">Shortcuts</span>
-                      </div>
-                      <div className="space-y-3 mt-4">
-                        {!isHmo ? (
-                          <>
-                            <button 
-                              onClick={() => setShowPaymentModal(true)}
-                              className="w-full bg-[#1f6feb] text-white text-xs font-black py-2 rounded-xl hover:bg-[#155fc4] transition-all shadow-md shadow-[#1f6feb]/10 active:scale-[0.98]"
-                            >
-                              RENEW 
-                            </button>
-                            {!isExpired && (
-                              <button 
-                                onClick={() => setCurrentView('wod')}
-                                className="w-full bg-brand-surface text-brand-textPrimary text-xs font-black py-2 rounded-xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
-                              >
-                                WOD
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            {!isExpired && (
-                              <button 
-                                onClick={() => setCurrentView('wod')}
-                                className="w-full bg-[#1f6feb] text-white text-xs font-black py-2 rounded-xl hover:bg-[#155fc4] transition-all shadow-md shadow-[#1f6feb]/10 active:scale-[0.98]"
-                              >
-                                WOD
-                              </button>
-                            )}
-                            <a 
-                              href="https://wa.me/2347059969059" 
-                              target="_blank" 
-                              rel="noreferrer"
-                              className="flex items-center justify-center gap-1.5 w-full text-center bg-brand-surface text-brand-textPrimary text-xs font-black py-2 rounded-xl hover:opacity-80 transition-all border border-brand-border active:scale-[0.98]"
-                            >
-                              <PhoneIcon className="w-3.5 h-3.5 text-brand-accent" />
-                              SUPPORT
-                            </a>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                    <GymAnnouncements
+                      portalType={portalType}
+                      isHmo={isHmo}
+                      onHasAnnouncementsChange={setHasLiveAnnouncements}
+                      className="lg:col-span-1 flex flex-col gap-4 animate-fadeIn"
+                    />
                  </div>
 
                  {!isHmo && (
@@ -1063,6 +1004,174 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
          </div>
       </main>
 
+      {/* Slide-up Bottom Menu Sheet */}
+      {isBottomMenuOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs animate-fadeIn"
+          onClick={() => setIsBottomMenuOpen(false)}
+        >
+          <div
+            className="w-full max-w-xl bg-brand-dark border-t sm:border border-brand-border rounded-t-3xl sm:rounded-3xl sm:mb-20 p-5 sm:p-6 shadow-2xl space-y-5 max-h-[82vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-4 pb-4 border-b border-brand-border">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 rounded-2xl bg-brand-black/20 flex items-center justify-center border border-white/10 shrink-0">
+                  <ProfilePlaceholder className="w-7 h-7 text-brand-accent" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-brand-textPrimary truncate">{member.firstName} {member.lastName}</h4>
+                  <p className="text-[11px] text-brand-textSecondary uppercase tracking-widest truncate">{member.package || 'Member'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <ThemeToggleSwitch />
+                <button
+                  onClick={() => setIsBottomMenuOpen(false)}
+                  className="p-2 rounded-full bg-brand-surface text-brand-textSecondary hover:text-brand-textPrimary transition-colors"
+                  aria-label="Close menu"
+                >
+                  <XIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                onClick={() => { setCurrentView('schedule'); setIsBottomMenuOpen(false); }}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold text-sm border transition-colors text-left ${
+                  currentView === 'schedule'
+                    ? 'bg-[#e0f2fe] text-[#1b1b1f] border-[#0284c7]/40'
+                    : 'bg-brand-surface/60 hover:bg-brand-surface text-brand-textPrimary border-brand-border'
+                }`}
+              >
+                <CalendarIcon className={`w-5 h-5 shrink-0 ${currentView === 'schedule' ? 'text-[#0284c7]' : 'text-brand-accent'}`} />
+                <span>Schedule</span>
+              </button>
+
+              {!isHmo && (
+                <button
+                  onClick={() => { setShowPauseModal(true); setIsBottomMenuOpen(false); }}
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-brand-surface/60 hover:bg-brand-surface text-brand-textPrimary font-semibold text-sm border border-brand-border transition-colors text-left"
+                >
+                  <PauseCircleIcon className="w-5 h-5 text-brand-accent shrink-0" />
+                  <span>Pause Membership</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => { setCurrentView('policies'); setIsBottomMenuOpen(false); }}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold text-sm border transition-colors text-left ${
+                  currentView === 'policies'
+                    ? 'bg-[#e0f2fe] text-[#1b1b1f] border-[#0284c7]/40'
+                    : 'bg-brand-surface/60 hover:bg-brand-surface text-brand-textPrimary border-brand-border'
+                }`}
+              >
+                <FileTextIcon className={`w-5 h-5 shrink-0 ${currentView === 'policies' ? 'text-[#0284c7]' : 'text-brand-accent'}`} />
+                <span>Policies</span>
+              </button>
+
+              <button
+                onClick={() => { setShowPricingModal(true); setIsBottomMenuOpen(false); }}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-brand-surface/60 hover:bg-brand-surface text-brand-textPrimary font-semibold text-sm border border-brand-border transition-colors text-left"
+              >
+                <TagIcon className="w-5 h-5 text-brand-accent shrink-0" />
+                <span>Pricing</span>
+              </button>
+
+              <a
+                href="https://wa.me/2347059969059"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setIsBottomMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-brand-surface/60 hover:bg-brand-surface text-brand-textPrimary font-semibold text-sm border border-brand-border transition-colors text-left ${!isHmo ? 'sm:col-span-2' : ''}`}
+              >
+                <PhoneIcon className="w-5 h-5 text-brand-accent shrink-0" />
+                <span>Support (WhatsApp)</span>
+              </a>
+            </div>
+
+            <div className="pt-2 border-t border-brand-border">
+              <button
+                onClick={() => { setIsBottomMenuOpen(false); onLogout(); }}
+                className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-2xl text-brand-danger bg-brand-danger/10 hover:bg-brand-danger/15 font-bold text-sm transition-colors"
+              >
+                <LogOutIcon className="w-5 h-5" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fixed Bottom Navigation Bar */}
+      <nav
+        aria-label="Primary Navigation"
+        className="fixed bottom-0 inset-x-0 z-40 bg-brand-dark/95 backdrop-blur-md border-t border-brand-border pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="max-w-2xl mx-auto px-2 py-1.5 flex items-center justify-around gap-1">
+          <button
+            onClick={() => { setCurrentView('dashboard'); setIsBottomMenuOpen(false); }}
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-2xl transition-colors min-h-[52px] ${
+              currentView === 'dashboard' && !isBottomMenuOpen && !showPaymentModal
+                ? 'bg-[#e0f2fe] text-[#0284c7] font-bold'
+                : 'text-brand-textSecondary hover:text-brand-textPrimary hover:bg-brand-surface/50'
+            }`}
+          >
+            <HomeIcon className="w-5 h-5" />
+            <span className={`text-[11px] leading-none ${currentView === 'dashboard' && !isBottomMenuOpen && !showPaymentModal ? 'text-[#1b1b1f]' : ''}`}>
+              Dashboard
+            </span>
+          </button>
+
+          {isValid && (
+            <button
+              onClick={() => { setCurrentView('wod'); setIsBottomMenuOpen(false); }}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-2xl transition-colors min-h-[52px] ${
+                currentView === 'wod' && !isBottomMenuOpen && !showPaymentModal
+                  ? 'bg-[#e0f2fe] text-[#0284c7] font-bold'
+                  : 'text-brand-textSecondary hover:text-brand-textPrimary hover:bg-brand-surface/50'
+              }`}
+            >
+              <DumbbellIcon className="w-5 h-5" />
+              <span className={`text-[11px] leading-none ${currentView === 'wod' && !isBottomMenuOpen && !showPaymentModal ? 'text-[#1b1b1f]' : ''}`}>
+                WOD
+              </span>
+            </button>
+          )}
+
+          {!isHmo && (
+            <button
+              onClick={() => { setShowPaymentModal(true); setIsBottomMenuOpen(false); }}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-2xl transition-colors min-h-[52px] ${
+                showPaymentModal && !isBottomMenuOpen
+                  ? 'bg-[#e0f2fe] text-[#0284c7] font-bold'
+                  : 'text-brand-textSecondary hover:text-brand-textPrimary hover:bg-brand-surface/50'
+              }`}
+            >
+              <CreditCardIcon className="w-5 h-5" />
+              <span className={`text-[11px] leading-none ${showPaymentModal && !isBottomMenuOpen ? 'text-[#1b1b1f]' : ''}`}>
+                Renew
+              </span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsBottomMenuOpen((prev) => !prev)}
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-2xl transition-colors min-h-[52px] ${
+              isBottomMenuOpen || currentView === 'policies' || currentView === 'schedule'
+                ? 'bg-[#e0f2fe] text-[#0284c7] font-bold'
+                : 'text-brand-textSecondary hover:text-brand-textPrimary hover:bg-brand-surface/50'
+            }`}
+          >
+            {isBottomMenuOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+            <span className={`text-[11px] leading-none ${isBottomMenuOpen || currentView === 'policies' || currentView === 'schedule' ? 'text-[#1b1b1f]' : ''}`}>
+              Menu
+            </span>
+          </button>
+        </div>
+      </nav>
+
       {showPauseModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-brand-dark w-full max-w-md rounded-3xl border border-brand-border p-8 shadow-2xl relative overflow-hidden">
@@ -1072,56 +1181,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
       )}
 
       {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-brand-dark w-full max-w-md rounded-3xl border border-brand-border p-8 shadow-2xl animate-scaleIn">
-            <div className="flex justify-between items-center mb-8">
-              <h3 className="font-black text-xl tracking-tight">Renew Membership</h3>
-              <button onClick={() => setShowPaymentModal(false)} className="p-2 bg-brand-surface rounded-full hover:text-brand-accent transition-colors"><XIcon className="w-5 h-5" /></button>
-            </div>
-            
-            <div className="bg-brand-accent/10 rounded-2xl p-6 mb-8 border border-brand-accent/20">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-brand-accent rounded-xl text-brand-accentText">
-                  <CreditCardIcon className="w-5 h-5" />
-                </div>
-                <h4 className="text-brand-accent font-black text-xs uppercase tracking-widest">ELECTRONIC TRANSFER</h4>
-              </div>
-              
-              <div className="space-y-4 text-sm font-bold">
-                <div className="flex justify-between items-center pb-3 border-b border-brand-accent/10">
-                  <span className="text-brand-textSecondary text-[10px] uppercase">Bank</span>
-                  <span className="text-brand-textPrimary">Access Bank</span>
-                </div>
-                <div className="flex justify-between items-center pb-3 border-b border-brand-accent/10">
-                  <span className="text-brand-textSecondary text-[10px] uppercase">Account</span>
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-brand-textPrimary">0078409920</span>
-                    <button onClick={handleCopy} className="text-brand-accent hover:text-brand-accentHover bg-brand-accent/20 p-1.5 rounded-lg">
-                      {copied ? <CheckCircleIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-brand-textSecondary text-[10px] uppercase">Name</span>
-                  <span className="text-brand-textPrimary">CrossFit Lagos</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center space-y-4">
-               <p className="text-[10px] font-black text-brand-textSecondary uppercase tracking-widest px-4">Instant Activation required?</p>
-               <a 
-                href="https://wa.me/2347059969059?text=Hello,%20I've%20just%20renewed%20my%20membership%20via%20the%20portal.%20Attached%20is%20my%20receipt." 
-                target="_blank" 
-                rel="noreferrer" 
-                className="flex items-center justify-center gap-2 w-full bg-green-600 text-white font-black py-4 rounded-2xl hover:bg-green-700 transition-all shadow-xl shadow-green-900/20 active:scale-[0.98]"
-               >
-                 <PhoneIcon className="w-5 h-5" /> WHATSAPP RECEIPT
-               </a>
-               <p className="text-[10px] text-brand-textSecondary/60 italic">Send a screenshot of your transfer for confirmation.</p>
-            </div>
-          </div>
-        </div>
+        <RenewModal member={member} onClose={() => setShowPaymentModal(false)} />
       )}
 
       {showPricingModal && (

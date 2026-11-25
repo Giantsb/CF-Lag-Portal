@@ -1,24 +1,15 @@
 import React from 'react';
 import { XIcon, TagIcon, DumbbellIcon } from './Icons';
+import { PRICING_PLANS } from '../utils/pricing';
 
 interface PricingViewProps {
   onClose: () => void;
 }
 
 const PricingView: React.FC<PricingViewProps> = ({ onClose }) => {
-  const unlimitedPackages = [
-    { duration: '1 Month', price: '₦35,000', perMonth: '₦35,000/mo' },
-    { duration: '3 Months', price: '₦96,000', perMonth: '₦32,000/mo', save: 'Save ₦9,000' },
-    { duration: '6 Months', price: '₦192,000', perMonth: '₦32,000/mo', save: 'Save ₦18,000' },
-    { duration: '12 Months', price: '₦384,000', perMonth: '₦32,000/mo', save: 'Save ₦36,000' },
-  ];
-
-  const limitedPackages = [
-    { duration: '1 Month', price: '₦30,000', perMonth: '₦30,000/mo' },
-    { duration: '3 Months', price: '₦87,000', perMonth: '₦29,000/mo', save: 'Save ₦3,000' },
-    { duration: '6 Months', price: '₦162,000', perMonth: '₦27,000/mo', save: 'Save ₦18,000' },
-    { duration: '12 Months', price: '₦324,000', perMonth: '₦27,000/mo', save: 'Save ₦36,000' },
-  ];
+  const unlimitedPackages = PRICING_PLANS.filter((p) => p.category === 'unlimited');
+  const limitedPackages = PRICING_PLANS.filter((p) => p.category === 'limited');
+  const weekendPackage = PRICING_PLANS.find((p) => p.category === 'weekend');
 
   return (
     <div className="animate-scaleIn max-h-[85vh] overflow-y-auto pr-1">
@@ -48,7 +39,7 @@ const PricingView: React.FC<PricingViewProps> = ({ onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {unlimitedPackages.map((pkg) => (
               <div 
-                key={pkg.duration} 
+                key={pkg.id} 
                 className="relative p-5 rounded-2xl border border-brand-border bg-brand-surface hover:border-brand-accent/30 transition-all"
               >
                 <div className="flex justify-between items-start">
@@ -79,7 +70,7 @@ const PricingView: React.FC<PricingViewProps> = ({ onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {limitedPackages.map((pkg) => (
               <div 
-                key={pkg.duration} 
+                key={pkg.id} 
                 className="p-5 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-accent/30 transition-all"
               >
                 <div className="flex justify-between items-start">
@@ -102,26 +93,28 @@ const PricingView: React.FC<PricingViewProps> = ({ onClose }) => {
         </div>
 
         {/* SECTION 3: Weekend Package */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 border-b border-brand-border/30 pb-2">
-            <span className="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span>
-            <h4 className="text-xs font-black uppercase tracking-widest text-brand-textPrimary">Weekend Package</h4>
-          </div>
-          <div className="p-5 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-accent/30 transition-all relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-3 opacity-[0.03]">
-              <DumbbellIcon className="w-16 h-16" />
+        {weekendPackage && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-brand-border/30 pb-2">
+              <span className="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span>
+              <h4 className="text-xs font-black uppercase tracking-widest text-brand-textPrimary">Weekend Package</h4>
             </div>
-            <div className="flex justify-between items-center relative z-10">
-              <div>
-                <p className="text-xs text-brand-textSecondary font-bold uppercase tracking-wider">Weekend (2x per week)</p>
-                <h5 className="font-black text-2xl text-brand-textPrimary mt-1">₦25,000 <span className="text-xs text-brand-textSecondary font-normal">/ 1 Month</span></h5>
+            <div className="p-5 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-accent/30 transition-all relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-3 opacity-[0.03]">
+                <DumbbellIcon className="w-16 h-16" />
               </div>
-              <div className="bg-amber-500/10 text-amber-500 font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-full border border-amber-500/20">
-                2x Classes / Week
+              <div className="flex justify-between items-center relative z-10">
+                <div>
+                  <p className="text-xs text-brand-textSecondary font-bold uppercase tracking-wider">{weekendPackage.categoryLabel}</p>
+                  <h5 className="font-black text-2xl text-brand-textPrimary mt-1">{weekendPackage.price} <span className="text-xs text-brand-textSecondary font-normal">/ {weekendPackage.duration}</span></h5>
+                </div>
+                <div className="bg-amber-500/10 text-amber-500 font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-full border border-amber-500/20">
+                  2x Classes / Week
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Disclaimer/Note */}
         <div className="bg-brand-surface/40 p-4 rounded-xl border border-brand-border/50 text-[11px] text-brand-textSecondary leading-relaxed font-medium">
