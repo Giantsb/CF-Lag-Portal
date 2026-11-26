@@ -32,21 +32,21 @@ const toWhatsAppNumber = (rawPhone: string): string => {
 const extractWhatsAppAction = (text: string): { url: string; label: string } | null => {
   if (!text) return null;
 
-  // 1. Look for explicit wa.me or whatsapp link
+  // 1. Look for markdown WhatsApp link first so custom label is preserved
+  const mdMatch = text.match(/\[([^\]]+)\]\(([^)]*(?:wa\.me|whatsapp)[^)]*)\)/i);
+  if (mdMatch) {
+    let url = mdMatch[2].trim();
+    if (url.startsWith('wa.me/')) url = 'https://' + url;
+    return { url, label: mdMatch[1].trim() || 'Chat on WhatsApp' };
+  }
+
+  // 2. Look for explicit wa.me or whatsapp link
   const urlMatch = text.match(/(?:https?:\/\/wa\.me\/[^\s]+|wa\.me\/[^\s]+|https?:\/\/(?:api|web)\.whatsapp\.com\/[^\s]+)/i);
   if (urlMatch) {
     let url = urlMatch[0];
     if (url.startsWith('wa.me/')) url = 'https://' + url;
     url = url.replace(/[.,;!?)]+$/, '');
     return { url, label: 'Chat on WhatsApp' };
-  }
-
-  // 2. Look for markdown WhatsApp link
-  const mdMatch = text.match(/\[([^\]]+)\]\(([^)]*(?:wa\.me|whatsapp)[^)]*)\)/i);
-  if (mdMatch) {
-    let url = mdMatch[2];
-    if (url.startsWith('wa.me/')) url = 'https://' + url;
-    return { url, label: mdMatch[1] || 'Chat on WhatsApp' };
   }
 
   // 3. Look for Nigerian phone number
@@ -61,6 +61,34 @@ const extractWhatsAppAction = (text: string): { url: string; label: string } | n
   }
 
   return null;
+};
+
+// Checks whether an announcement's expiryDate is strictly in the past
+const isAnnouncementExpired = (expiryDate?: string): boolean => {
+  if (!expiryDate) return false;
+  const trimmed = String(expiryDate).trim();
+  if (!trimmed || trimmed.toUpperCase() === 'N/A') return false;
+
+  // For date-only strings (e.g. YYYY-MM-DD), allow visibility through end of that local day
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [y, m, d] = trimmed.split('-').map(Number);
+    const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
+    return Date.now() > endOfDay.getTime();
+  }
+
+  const parsedMs = Date.parse(trimmed);
+  if (Number.isNaN(parsedMs)) return false;
+  return Date.now() > parsedMs;
+};
+
+const safeParseStringArray = (raw: string | null): string[] => {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
 };
 
 // Renders announcement message with clickable links and WhatsApp phone numbers
@@ -92,7 +120,7 @@ const renderFormattedMessage = (text: string, isUrgent: boolean): React.ReactNod
               isUrgent
                 ? 'text-white hover:text-white/80'
                 : isWa
-                  ? 'text-emerald-400 hover:text-emerald-300'
+                  ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300'
                   : 'text-brand-accent hover:underline'
             }`}
             onClick={(e) => e.stopPropagation()}
@@ -121,7 +149,7 @@ const renderFormattedMessage = (text: string, isUrgent: boolean): React.ReactNod
             isUrgent
               ? 'text-white hover:text-white/80'
               : isWa
-                ? 'text-emerald-400 hover:text-emerald-300'
+                ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300'
                 : 'text-brand-accent hover:underline'
           }`}
           onClick={(e) => e.stopPropagation()}
@@ -146,7 +174,7 @@ const renderFormattedMessage = (text: string, isUrgent: boolean): React.ReactNod
           className={`inline-flex items-center gap-1 font-bold underline decoration-2 underline-offset-2 transition-all ${
             isUrgent
               ? 'text-white hover:text-white/80 bg-white/20 px-1.5 py-0.5 rounded'
-              : 'text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 hover:border-emerald-500/40'
+              : 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-600/25 dark:border-emerald-500/20 hover:border-emerald-500/40'
           }`}
           title="Open in WhatsApp"
           onClick={(e) => e.stopPropagation()}
@@ -175,10 +203,16 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({
   className,
 }) => {
   const cached = getCachedAnnouncements();
-  const [announcements, setAnnouncements] = useState<Announcement[]>(cached?.data || []);
+  const [announcements, setAnnouncements] = useState<Announcement[]>(
+    Array.isArray(cached?.data) ? cached.data : []
+  );
   const [loading, setLoading] = useState(!cached);
-  const [dismissedTitles, setDismissedTitles] = useState<string[]>([]);
-  const [seenTitles, setSeenTitles] = useState<string[]>([]);
+  const [dismissedTitles, setDismissedTitles] = useState<string[]>(() =>
+    safeParseStringArray(localStorage.getItem('gym_dismissed_announcements'))
+  );
+  const [seenTitles, setSeenTitles] = useState<string[]>(() =>
+    safeParseStringArray(localStorage.getItem('gym_seen_announcements'))
+  );
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
 
   // Determine user portal status
@@ -193,75 +227,80 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({
           const parsed = JSON.parse(session);
           userIsHmo = parsed.portalType === 'hmo';
         }
-      } catch (e) {
+      } catch {
         userIsHmo = false;
       }
     }
   }
 
   useEffect(() => {
-    // Load dismissed and seen titles from localStorage for persistence
-    const savedDismissed = localStorage.getItem('gym_dismissed_announcements');
-    const savedSeen = localStorage.getItem('gym_seen_announcements');
-    
-    if (savedDismissed) {
-      try {
-        setDismissedTitles(JSON.parse(savedDismissed));
-      } catch (e) {
-        console.error('Failed to parse dismissed announcements');
-      }
-    }
-
-    if (savedSeen) {
-      try {
-        setSeenTitles(JSON.parse(savedSeen));
-      } catch (e) {
-        console.error('Failed to parse seen announcements');
-      }
-    }
+    let isMounted = true;
+    let seenTimer: number | undefined;
 
     const fetchAnnouncements = async () => {
       if (!WOD_SCRIPT_URL) {
-        setLoading(false);
+        if (isMounted) setLoading(false);
         return;
       }
 
       try {
         const url = `${WOD_SCRIPT_URL}?mode=announcements`;
         const response = await fetch(url);
-        
+
         if (response.ok) {
           const result = await response.json();
-          
-          if (result.success && result.data && Array.isArray(result.data.announcements)) {
-            const dataList = result.data.announcements;
+          const dataList: Announcement[] | null = Array.isArray(result?.data?.announcements)
+            ? result.data.announcements
+            : Array.isArray(result?.announcements)
+              ? result.announcements
+              : null;
+
+          if (result?.success && dataList && isMounted) {
             setAnnouncements(dataList);
             setCachedAnnouncements(dataList);
-            
-            // Mark these as "seen" after 5 seconds of being displayed
-            setTimeout(() => {
-              const allTitles = dataList.map((a: Announcement) => a.title);
-              const currentSeen = JSON.parse(localStorage.getItem('gym_seen_announcements') || '[]');
-              const updatedSeen = Array.from(new Set([...currentSeen, ...allTitles]));
+
+            // Mark displayed announcements as "seen" after 5 seconds
+            seenTimer = window.setTimeout(() => {
+              if (!isMounted) return;
+              const allIds = dataList
+                .map((a: Announcement) => (a.title || a.message || '').trim())
+                .filter((id): id is string => Boolean(id));
+              const currentSeen = safeParseStringArray(localStorage.getItem('gym_seen_announcements'));
+              const updatedSeen = Array.from(new Set([...currentSeen, ...allIds]));
               setSeenTitles(updatedSeen);
-              localStorage.setItem('gym_seen_announcements', JSON.stringify(updatedSeen));
+              try {
+                localStorage.setItem('gym_seen_announcements', JSON.stringify(updatedSeen));
+              } catch {
+                // Ignore storage quota errors
+              }
             }, 5000);
           }
         }
       } catch (err) {
         console.error('[Announcements] Fetch failed:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchAnnouncements();
+
+    return () => {
+      isMounted = false;
+      if (seenTimer !== undefined) {
+        window.clearTimeout(seenTimer);
+      }
+    };
   }, []);
 
   const handleDismiss = (title: string) => {
-    const updatedDismissed = [...dismissedTitles, title];
+    const updatedDismissed = Array.from(new Set([...dismissedTitles, title]));
     setDismissedTitles(updatedDismissed);
-    localStorage.setItem('gym_dismissed_announcements', JSON.stringify(updatedDismissed));
+    try {
+      localStorage.setItem('gym_dismissed_announcements', JSON.stringify(updatedDismissed));
+    } catch {
+      // Ignore storage quota errors
+    }
   };
 
   const toggleExpand = (key: string) => {
@@ -271,20 +310,26 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({
     }));
   };
 
-  const activeAnnouncements = announcements.filter(a => {
-    // 1. Audience filtering
+  const activeAnnouncements = announcements.filter((a) => {
+    if (!a || (!a.title && !a.message)) return false;
+
+    // 1. Expiry filtering (prevents stale cached items from lingering past expiryDate)
+    if (isAnnouncementExpired(a.expiryDate)) return false;
+
+    // 2. Audience filtering
     const targetAudience = (a.audience || 'ALL').toString().trim().toUpperCase();
-    if (targetAudience !== 'ALL') {
-      if (userIsHmo && targetAudience !== 'HMO') {
-        return false;
-      }
-      if (!userIsHmo && (targetAudience === 'HMO')) {
-        return false;
-      }
+    if (targetAudience && targetAudience !== 'ALL') {
+      const isHmoTarget = targetAudience === 'HMO' || targetAudience === 'HMOS';
+      const isMemberTarget = targetAudience === 'MEMBER' || targetAudience === 'MEMBERS';
+      if (userIsHmo && !isHmoTarget) return false;
+      if (!userIsHmo && isHmoTarget) return false;
+      if (userIsHmo && isMemberTarget) return false;
     }
 
-    // 2. Dismissal filtering
-    return a.type === 'urgent' || !dismissedTitles.includes(a.title);
+    // 3. Dismissal filtering (urgent announcements stay pinned)
+    const normalizedType = (a.type || 'info').toString().trim().toLowerCase();
+    const announcementId = (a.title || a.message || '').trim();
+    return normalizedType === 'urgent' || !dismissedTitles.includes(announcementId);
   });
 
   const hasLive = !loading && activeAnnouncements.length > 0;
@@ -300,12 +345,14 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({
   return (
     <div className={className || 'space-y-4 animate-fadeIn'}>
       {activeAnnouncements.map((announcement, index) => {
-        const isUrgent = announcement.type === 'urgent';
-        const isWarning = announcement.type === 'warning';
+        const normalizedType = (announcement.type || 'info').toString().trim().toLowerCase();
+        const isUrgent = normalizedType === 'urgent';
+        const isWarning = normalizedType === 'warning';
+        const announcementId = (announcement.title || announcement.message || '').trim();
         // Logic: Show NEW if backend says isNew AND user hasn't seen it in a previous session
-        const showNewBadge = announcement.isNew && !seenTitles.includes(announcement.title);
+        const showNewBadge = Boolean(announcement.isNew) && !seenTitles.includes(announcementId);
         const whatsAppAction = extractWhatsAppAction(announcement.message);
-        
+
         let bgColor = 'bg-brand-dark';
         let borderColor = 'border-brand-border';
         let textColor = 'text-brand-textPrimary';
@@ -335,28 +382,28 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({
         const itemKey = `${announcement.title || 'announcement'}-${index}`;
         const messageText = (announcement.message || '').trim();
         const lineCount = messageText.split(/\r?\n/).length;
-        const isLongMessage = messageText.length > 110 || lineCount > 3;
+        const isLongMessage = messageText.length > 90 || lineCount > 3;
         const isExpanded = Boolean(expandedKeys[itemKey]);
 
         return (
-          <div 
+          <div
             key={itemKey}
             className={`relative p-5 rounded-3xl border ${borderColor} ${bgColor} ${textColor} ${glowClass} animate-announcement-card transition-all overflow-hidden group flex-1 flex flex-col justify-center`}
           >
             {isUrgent && (
-              <div className="absolute top-0 right-0 p-1 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+              <div className="absolute top-0 right-0 p-1 opacity-10 transform translate-x-1/4 -translate-y-1/4 pointer-events-none">
                 <AlertCircleIcon className="w-24 h-24" />
               </div>
             )}
 
-            <div className="flex gap-4 relative z-10">
+            <div className="flex gap-3.5 relative z-10">
               <div className={`shrink-0 p-2 rounded-xl self-start ${isUrgent ? 'bg-white/20 animate-pulse' : 'bg-brand-surface'}`}>
                 <Icon className={`w-6 h-6 ${iconColor}`} />
               </div>
 
-              <div className="flex-1 pr-6 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className={`font-black uppercase tracking-tight ${isUrgent ? 'text-white' : 'text-brand-textPrimary'}`}>
+              <div className="flex-1 pr-8 min-w-0">
+                <div className="flex items-center flex-wrap gap-2 mb-1">
+                  <h4 className={`font-black uppercase tracking-tight leading-snug ${isUrgent ? 'text-white' : 'text-brand-textPrimary'}`}>
                     {announcement.title}
                   </h4>
                   {showNewBadge && (
@@ -366,7 +413,7 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({
                   )}
                 </div>
                 <div
-                  className={`text-sm leading-relaxed whitespace-pre-wrap transition-all ${
+                  className={`text-sm leading-relaxed whitespace-pre-wrap break-words transition-all ${
                     isUrgent ? 'text-white/90 font-medium' : 'text-brand-textSecondary'
                   } ${isLongMessage && !isExpanded ? 'line-clamp-3' : ''}`}
                 >
@@ -419,9 +466,10 @@ const GymAnnouncements: React.FC<GymAnnouncementsProps> = ({
               </div>
 
               {!isUrgent && (
-                <button 
-                  onClick={() => handleDismiss(announcement.title)}
-                  className="absolute top-2 right-2 p-2 text-brand-textSecondary hover:text-brand-textPrimary transition-colors"
+                <button
+                  type="button"
+                  onClick={() => handleDismiss(announcementId)}
+                  className="absolute -top-1 -right-1 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-brand-textSecondary hover:text-brand-textPrimary hover:bg-brand-surface transition-colors"
                   aria-label="Dismiss announcement"
                 >
                   <XIcon className="w-4 h-4" />
