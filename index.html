@@ -129,30 +129,71 @@
     }
 
     @keyframes splashGlowBreathe {
-      0%, 100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.7; }
-      50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.95; }
+      0%, 100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.65; }
+      50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.92; }
     }
 
-    @keyframes splashFrameDraw {
-      from { stroke-dashoffset: 1; opacity: 0.2; }
-      to { stroke-dashoffset: 0; opacity: 1; }
+    @keyframes splashHorizonDraw {
+      0% {
+        stroke-dashoffset: 440;
+        opacity: 0;
+      }
+      100% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+      }
     }
 
-    @keyframes splashLogoReveal {
+    @keyframes splashSkylineRise {
       0% {
         opacity: 0;
-        transform: translateY(14px) scale(0.94);
-        filter: blur(4px);
+        transform: translateY(20px) scaleY(0.88);
+        clip-path: inset(100% 0 0 0);
       }
-      65% {
+      100% {
         opacity: 1;
-        transform: translateY(-2px) scale(1.015);
-        filter: blur(0px);
+        transform: translateY(0) scaleY(1);
+        clip-path: inset(0 0 0 0);
+      }
+    }
+
+    @keyframes splashKickerReveal {
+      0% {
+        opacity: 0;
+        letter-spacing: 0.38em;
+        transform: translateY(6px);
+      }
+      100% {
+        opacity: 1;
+        letter-spacing: 0.22em;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes splashWordmarkPunch {
+      0% {
+        opacity: 0;
+        transform: translateY(14px) scale(0.95);
+        filter: blur(6px);
       }
       100% {
         opacity: 1;
         transform: translateY(0) scale(1);
-        filter: blur(0px);
+        filter: blur(0);
+      }
+    }
+
+    @keyframes splashMetallicSheen {
+      0% {
+        transform: translateX(-140%) skewX(-24deg);
+        opacity: 0;
+      }
+      30% {
+        opacity: 0.65;
+      }
+      70%, 100% {
+        transform: translateX(260%) skewX(-24deg);
+        opacity: 0;
       }
     }
 
@@ -235,21 +276,33 @@
 
     .splash-glow-anim {
       animation:
-        splashGlowIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards,
-        splashGlowBreathe 3.4s ease-in-out 1s infinite;
+        splashGlowIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards,
+        splashGlowBreathe 3.8s ease-in-out 0.95s infinite;
     }
-    .splash-frame-anim {
-      stroke-dasharray: 1;
-      stroke-dashoffset: 1;
-      animation: splashFrameDraw 0.9s cubic-bezier(0.55, 0, 0.3, 1) 0.08s forwards;
+    .splash-horizon-anim {
+      stroke-dasharray: 440;
+      stroke-dashoffset: 440;
+      animation: splashHorizonDraw 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    .splash-logo-anim {
+    .splash-skyline-anim {
       opacity: 0;
-      animation: splashLogoReveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.22s forwards;
+      transform-origin: bottom center;
+      animation: splashSkylineRise 0.88s cubic-bezier(0.16, 1, 0.3, 1) 0.16s forwards;
+    }
+    .splash-kicker-anim {
+      opacity: 0;
+      animation: splashKickerReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.42s forwards;
+    }
+    .splash-wordmark-anim {
+      opacity: 0;
+      animation: splashWordmarkPunch 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.56s forwards;
+    }
+    .splash-sheen-anim {
+      animation: splashMetallicSheen 3.2s cubic-bezier(0.4, 0, 0.2, 1) 0.9s infinite;
     }
     .splash-fade-up {
       opacity: 0;
-      animation: splashFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) var(--splash-delay, 0.65s) forwards;
+      animation: splashFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) var(--splash-delay, 0.72s) forwards;
     }
     .splash-bar-slide {
       animation: splashBarSlide 1.35s ease-in-out infinite;
@@ -265,24 +318,37 @@
       filter: none;
     }
 
-    .splash-fast .splash-frame-anim {
-      animation-duration: 0.45s;
-      animation-delay: 0.02s;
+    .splash-fast .splash-horizon-anim {
+      animation-duration: 0.42s;
     }
-    .splash-fast .splash-logo-anim {
-      animation-duration: 0.5s;
+    .splash-fast .splash-skyline-anim {
+      animation-duration: 0.48s;
       animation-delay: 0.08s;
     }
+    .splash-fast .splash-kicker-anim {
+      animation-duration: 0.42s;
+      animation-delay: 0.18s;
+    }
+    .splash-fast .splash-wordmark-anim {
+      animation-duration: 0.45s;
+      animation-delay: 0.24s;
+    }
+    .splash-fast .splash-sheen-anim {
+      animation-delay: 0.45s;
+    }
     .splash-fast .splash-fade-up {
-      animation-duration: 0.4s;
-      animation-delay: 0.22s;
+      animation-duration: 0.38s;
+      animation-delay: 0.28s;
     }
 
     @media (prefers-reduced-motion: reduce) {
       .animate-announcement-card,
       .splash-glow-anim,
-      .splash-frame-anim,
-      .splash-logo-anim,
+      .splash-horizon-anim,
+      .splash-skyline-anim,
+      .splash-kicker-anim,
+      .splash-wordmark-anim,
+      .splash-sheen-anim,
       .splash-fade-up,
       .splash-bar-slide,
       .splash-ember {
@@ -290,7 +356,11 @@
         opacity: 1 !important;
         transform: none !important;
         filter: none !important;
+        clip-path: none !important;
         stroke-dashoffset: 0 !important;
+      }
+      .splash-sheen-anim {
+        opacity: 0 !important;
       }
     }
 
@@ -314,10 +384,10 @@
     }
   </style>
 
-  <!-- Google Fonts for IBM Plex Sans -->
+  <!-- Google Fonts for IBM Plex Sans & Outfit (Splash Wordmark) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
 
   <!-- Tailwind Configuration -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -329,6 +399,7 @@
           fontFamily: {
             ibm: ['"IBM Plex Sans"', 'sans-serif'],
             display: ['"IBM Plex Sans"', 'sans-serif'],
+            logo: ['"Outfit"', '"IBM Plex Sans"', 'sans-serif'],
           },
           colors: {
             brand: {

@@ -22,7 +22,8 @@ import {
   SupportChatIcon,
   ProfilePlaceholder,
   AlertCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  LagosSkylineSvg
 } from './Icons';
 import { MemberData, PauseStatus } from '../types';
 import { logAnalyticsEvent } from '../services/firebase';
@@ -78,7 +79,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [isBottomMenuOpen, setIsBottomMenuOpen] = useState(false);
-  const [headerLogoError, setHeaderLogoError] = useState(false);
   const [hasLiveAnnouncements, setHasLiveAnnouncements] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies' | 'wod'>('dashboard');
   const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
@@ -561,22 +561,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
             aria-label="CrossFit Lagos Dashboard"
             className="flex items-center gap-3 text-left group min-h-[44px]"
           >
-            {!headerLogoError ? (
-              <div className="relative w-[78px] sm:w-[86px] aspect-[100/44] overflow-hidden shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
-                <img
-                  src="/assets/aistudio/New_CF_logo-removebg-preview_33dc3adb.png"
-                  alt="House of Athletes CrossFit Lagos"
-                  referrerPolicy="no-referrer"
-                  onError={() => setHeaderLogoError(true)}
-                  className="brand-logo-adaptive absolute left-1/2 top-1/2 w-[144%] max-w-none h-auto pointer-events-none"
-                  style={{ transform: 'translate(-50%, -44.25%)' }}
-                />
-              </div>
-            ) : (
-              <span className="font-bold text-base sm:text-lg text-brand-textPrimary leading-none">
-                CrossFit Lagos
+            <div className="flex flex-col items-center shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
+              <LagosSkylineSvg className="w-[38px] sm:w-[42px] h-auto text-brand-textPrimary" />
+              <span className="text-[3.8px] sm:text-[4.2px] font-extrabold uppercase tracking-[0.14em] leading-none text-brand-textPrimary -mt-[1px]">
+                HOUSE OF <span className="text-[#cc1d1d] dark:text-[#dc2626]">ATHLETES</span>
               </span>
-            )}
+              <span className="font-logo text-[13px] sm:text-[14.5px] font-black tracking-[-0.04em] lowercase leading-[0.9] text-brand-textPrimary mt-[1px]">
+                crossfit lagos
+              </span>
+            </div>
             <div className="hidden sm:flex items-center gap-3">
               <span className="h-5 w-px bg-brand-border" aria-hidden="true" />
               <span className="text-[11px] font-medium text-brand-textSecondary uppercase tracking-wider whitespace-nowrap">

@@ -393,6 +393,102 @@ export const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+interface LagosSkylineSvgProps {
+  className?: string;
+  skylineClassName?: string;
+  horizonClassName?: string;
+}
 
+export const LagosSkylineSvg = ({
+  className,
+  skylineClassName,
+  horizonClassName,
+}: LagosSkylineSvgProps) => (
+  <svg
+    viewBox="0 0 420 124"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    className={className}
+  >
+    <g className={skylineClassName} fill="currentColor">
+      {/* Left Palm Tree */}
+      <path d="M56 105 C56 96 55 89 53 83 C48 84 44 87 42 90 C44 85 48 82 52 80 C47 78 43 79 40 82 C43 77 48 75 53 77 C53 72 55 69 57 68 C56 71 56 74 57 77 C61 75 65 76 68 79 C64 78 60 78 57 81 C61 82 64 85 66 89 C62 86 59 84 57 84 C58 90 59 97 59 105 Z" />
 
+      {/* Left Low Embankment & Mosque Cluster (Twin Minarets + Domes) */}
+      <rect x="61" y="88" width="8" height="16" />
+      <path d="M68.5 103 V44 L71.5 29 L74.5 44 V103 Z" />
+      <rect x="67.5" y="42" width="8" height="3" />
+      <rect x="75" y="65" width="17" height="36" />
+      <path d="M77 65 C77 52 90 52 90 65 Z" />
+      <rect x="82.5" y="48" width="2" height="7" />
+      <rect x="92" y="57" width="24" height="43" />
+      <path d="M94 57 C94 40 114 40 114 57 Z" />
+      <rect x="103" y="38" width="2" height="6" />
+      <path d="M115.5 99 V44 L118.5 29 L121.5 44 V99 Z" />
+      <rect x="114.5" y="42" width="8" height="3" />
 
+      {/* Mid-Left Stepped Complex & Tall Needle Spire */}
+      <rect x="123" y="74" width="12" height="25" />
+      <rect x="136" y="60" width="13" height="38" />
+      <rect x="140" y="54" width="6" height="6" />
+      <path d="M150 97 V48 L153.5 34 L154.5 23 L155.5 23 L156.5 34 L160 48 V97 Z" />
+      <rect x="149" y="58" width="12" height="39" />
+
+      {/* Mid-Center Rounded-Top Commercial Tower */}
+      <rect x="163" y="62" width="10" height="34" />
+      <path d="M174 96 V53 C174 49 194 49 194 53 V96 Z" />
+      <rect x="180" y="47" width="8" height="5" />
+
+      {/* Center Tallest Stepped Lagos Financial Skyscraper & Mast */}
+      <rect x="197" y="41" width="12" height="55" />
+      <rect x="201" y="36" width="7" height="5" />
+      <rect x="209" y="31" width="22" height="65" />
+      <rect x="213" y="24" width="13" height="7" />
+      <rect x="219" y="8" width="2.2" height="16" />
+      <rect x="231" y="54" width="10" height="42" />
+
+      {/* Mid-Right Twin Civic Pinnacles & Step Building */}
+      <path d="M245 96 V54 L249.5 44 L254 54 V96 Z" />
+      <path d="M259 96 V55 L263 45 L267 55 V96 Z" />
+      <rect x="254" y="69" width="5" height="27" />
+      <rect x="268" y="61" width="12" height="36" />
+
+      {/* Iconic Bridge / Stadium Arch with Inner Chord & Ribs */}
+      <path
+        d="M281 94 Q321 52 361 94"
+        stroke="currentColor"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M284 94 Q321 61 358 94"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        fill="none"
+      />
+      <line x1="292" y1="81" x2="350" y2="81" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="296" y1="77" x2="296" y2="95" stroke="currentColor" strokeWidth="1.4" />
+      <line x1="308" y1="72" x2="308" y2="96" stroke="currentColor" strokeWidth="1.4" />
+      <line x1="321" y1="70" x2="321" y2="96" stroke="currentColor" strokeWidth="1.6" />
+      <line x1="334" y1="72" x2="334" y2="97" stroke="currentColor" strokeWidth="1.4" />
+      <line x1="346" y1="77" x2="346" y2="98" stroke="currentColor" strokeWidth="1.4" />
+
+      {/* Right Palm Tree */}
+      <path d="M362 104 C362 95 363 88 365 82 C360 83 356 86 354 89 C356 84 360 81 364 79 C359 77 355 78 352 81 C355 76 360 74 365 76 C365 71 367 68 369 67 C368 70 368 73 369 76 C373 74 377 75 380 78 C376 77 372 77 369 80 C373 81 376 84 378 88 C374 85 371 83 369 83 C368 89 367 96 367 105 Z" />
+
+      {/* Curved Skyline Base */}
+      <path d="M40 107 Q210 78 380 108 L380 112 Q210 86 40 112 Z" />
+    </g>
+
+    {/* Sweeping Horizon Arc */}
+    <path
+      d="M16 116 Q210 81 404 116"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      className={horizonClassName}
+    />
+  </svg>
+);

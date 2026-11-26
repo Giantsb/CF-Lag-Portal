@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { LagosSkylineSvg } from './Icons';
 
 export type SplashMode = 'launch' | 'login';
 
@@ -33,7 +34,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
     if (typeof document === 'undefined') return false;
     return document.documentElement.getAttribute('data-theme') === 'light';
   });
-  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     const syncTheme = () => {
@@ -72,49 +72,52 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
     ? memberName
       ? `${isNewMember ? 'Welcome' : 'Welcome back'}, ${memberName}`
       : 'Access verified'
-    : 'House of Athletes';
-
-  const subText = isLoginMode
-    ? 'Loading your dashboard'
     : 'Membership Portal · Lagos';
+
+  const subText = isLoginMode ? 'Loading your dashboard' : null;
 
   return (
     <div
       role="status"
       aria-live="polite"
-      aria-label={isLoginMode ? greetingText : 'CrossFit Lagos splash screen'}
+      aria-label={isLoginMode ? greetingText : 'House of Athletes CrossFit Lagos splash screen'}
       onClick={handleContainerClick}
-      className={`fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden font-ibm select-none transition-opacity duration-300 ease-out ${
-        isVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      } ${isLoginMode ? 'splash-fast' : ''} ${canSkip ? 'cursor-pointer' : 'cursor-default'}`}
+      className={`fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden font-ibm select-none transition-[opacity,transform,filter] duration-300 ease-out ${
+        isVisible
+          ? 'opacity-100 scale-100 blur-0 pointer-events-auto'
+          : 'opacity-0 scale-[1.03] blur-[6px] pointer-events-none'
+      } ${isLoginMode ? 'splash-fast' : ''} ${canSkip ? 'cursor-pointer' : 'cursor-default'} ${
+        isLight ? 'text-slate-900' : 'text-[#FCFCFC]'
+      }`}
       style={{
         background: isLight
-          ? 'radial-gradient(120% 80% at 50% 26%, rgba(4, 101, 64, 0.08), transparent 58%), radial-gradient(120% 70% at 50% 118%, rgba(15, 23, 42, 0.05), transparent 55%), #F1F5F9'
-          : 'radial-gradient(120% 85% at 50% 26%, rgba(6, 122, 80, 0.24) 0%, transparent 56%), radial-gradient(120% 70% at 50% 118%, #0F172A, transparent 62%), #191919',
+          ? 'radial-gradient(120% 80% at 50% 34%, rgba(4, 101, 64, 0.08), transparent 58%), radial-gradient(120% 70% at 50% 118%, rgba(15, 23, 42, 0.05), transparent 55%), #F1F5F9'
+          : 'radial-gradient(120% 85% at 50% 34%, rgba(6, 122, 80, 0.22) 0%, transparent 56%), radial-gradient(120% 70% at 50% 118%, #0F172A, transparent 62%), #191919',
       }}
     >
-      {/* Subtle architectural dot matrix */}
+      {/* Subtle architectural grid backdrop */}
       <div
         aria-hidden="true"
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: isLight
-            ? 'radial-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px)'
-            : 'radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-          maskImage: 'radial-gradient(80% 60% at 50% 42%, black, transparent 78%)',
-          WebkitMaskImage: 'radial-gradient(80% 60% at 50% 42%, black, transparent 78%)',
+            ? 'linear-gradient(rgba(15, 23, 42, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 23, 42, 0.055) 1px, transparent 1px)'
+            : 'linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+          backgroundPosition: 'center center',
+          maskImage: 'radial-gradient(85% 65% at 50% 45%, black, transparent 82%)',
+          WebkitMaskImage: 'radial-gradient(85% 65% at 50% 45%, black, transparent 82%)',
         }}
       />
 
-      {/* Ambient forest-green spotlight */}
+      {/* Ambient forest-green spotlight behind skyline */}
       <div
         aria-hidden="true"
-        className="splash-glow-anim absolute top-[43%] left-1/2 w-[320px] h-[320px] sm:w-[380px] sm:h-[380px] rounded-full pointer-events-none blur-2xl opacity-0"
+        className="splash-glow-anim absolute top-[42%] left-1/2 w-[300px] h-[220px] sm:w-[380px] sm:h-[260px] rounded-full pointer-events-none blur-3xl opacity-0"
         style={{
           background: isLight
-            ? 'radial-gradient(circle, rgba(6, 122, 80, 0.11), rgba(4, 101, 64, 0.05) 44%, transparent 72%)'
-            : 'radial-gradient(circle, rgba(6, 122, 80, 0.24), rgba(4, 101, 64, 0.14) 42%, transparent 72%)',
+            ? 'radial-gradient(circle, rgba(6, 122, 80, 0.14), rgba(4, 101, 64, 0.05) 48%, transparent 74%)'
+            : 'radial-gradient(circle, rgba(6, 122, 80, 0.28), rgba(4, 101, 64, 0.14) 46%, transparent 74%)',
         }}
       />
 
@@ -139,115 +142,84 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
         ))}
       </div>
 
-      {/* Center brand lockup stage */}
-      <div className="relative z-10 flex flex-col items-center px-6 -mt-6 w-full max-w-md">
-        <div className="splash-logo-anim relative w-[280px] sm:w-[324px]">
-          {/* Animated charcoal & forest-green hairline frame */}
-          <svg
+      {/* Center vector Lagos skyline + typographic brand lockup */}
+      <div className="relative z-10 flex flex-col items-center px-6 -mt-6 w-full max-w-lg">
+        {/* 1. Vector Lagos Skyline Silhouette & Sweeping Horizon Arc */}
+        <div className="relative w-full max-w-[210px] sm:max-w-[250px] overflow-hidden">
+          <LagosSkylineSvg
+            className="w-full h-auto overflow-visible"
+            skylineClassName="splash-skyline-anim"
+            horizonClassName="splash-horizon-anim"
+          />
+
+          {/* Diagonal Specular Sheen over Skyline */}
+          <div
             aria-hidden="true"
-            viewBox="0 0 324 146"
-            className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none overflow-visible"
-          >
-            <rect
-              x="1"
-              y="1"
-              width="322"
-              height="144"
-              rx="18"
-              pathLength={1}
-              fill="none"
-              stroke={isLight ? 'rgba(15, 23, 42, 0.14)' : 'rgba(255, 255, 255, 0.18)'}
-              strokeWidth="1.2"
-              className="splash-frame-anim"
-            />
-            <line
-              x1="18"
-              y1="1"
-              x2="76"
-              y2="1"
-              pathLength={1}
-              stroke={isLight ? '#046540' : '#067A50'}
-              strokeWidth="2"
-              strokeLinecap="round"
-              className="splash-frame-anim"
-            />
-            <line
-              x1="248"
-              y1="145"
-              x2="306"
-              y2="145"
-              pathLength={1}
-              stroke={isLight ? '#046540' : '#067A50'}
-              strokeWidth="2"
-              strokeLinecap="round"
-              className="splash-frame-anim"
-            />
-          </svg>
-
-          {/* Transparent brand logo stage synced to dark/light backgrounds */}
-          <div className="relative w-full aspect-[100/44] overflow-hidden flex items-center justify-center">
-            {!logoError ? (
-              <img
-                src="/assets/aistudio/New_CF_logo-removebg-preview_33dc3adb.png"
-                alt="House of Athletes CrossFit Lagos"
-                referrerPolicy="no-referrer"
-                onError={() => setLogoError(true)}
-                className="absolute left-1/2 top-1/2 w-[144%] max-w-none h-auto pointer-events-none"
-                style={{
-                  transform: 'translate(-50%, -44.25%)',
-                  filter: isLight
-                    ? 'none'
-                    : 'invert(1) hue-rotate(180deg) brightness(1.06) contrast(1.08) drop-shadow(0 6px 20px rgba(0, 0, 0, 0.5))',
-                }}
-              />
-            ) : (
-              <div className="px-4 py-3 text-center">
-                <p
-                  className={`text-[11px] font-extrabold tracking-[0.22em] uppercase ${
-                    isLight ? 'text-slate-900' : 'text-white'
-                  }`}
-                >
-                  House of <span className="text-red-500">Athletes</span>
-                </p>
-                <p
-                  className={`text-2xl font-black tracking-tight leading-none mt-1 ${
-                    isLight ? 'text-slate-900' : 'text-white'
-                  }`}
-                >
-                  crossfit lagos
-                </p>
-              </div>
-            )}
-          </div>
+            className="splash-sheen-anim pointer-events-none absolute inset-0 w-1/3 h-full"
+            style={{
+              background: isLight
+                ? 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent)'
+                : 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent)',
+            }}
+          />
         </div>
 
-        {/* Dynamic contextual headline & subtitle */}
+        {/* 2. "HOUSE OF ATHLETES" Tracked Kicker with Red "ATHLETES" Accent */}
+        <div className="splash-kicker-anim text-center">
+          <p className="text-[8.5px] sm:text-[9.5px] font-extrabold uppercase tracking-[0.22em] leading-none">
+            <span>HOUSE OF </span>
+            <span className={isLight ? 'text-[#cc1d1d]' : 'text-[#dc2626]'}>ATHLETES</span>
+          </p>
+        </div>
+
+        {/* 3. Bold Lowercase "crossfit lagos" Primary Wordmark */}
+        <div className="splash-wordmark-anim mt-0.5 sm:mt-1 text-center">
+          <h1 className="font-logo text-[42px] sm:text-[54px] font-black tracking-[-0.04em] lowercase leading-[0.92]">
+            crossfit lagos
+          </h1>
+        </div>
+
+        {/* Contextual Portal / Member Greeting Copy */}
         <div
-          className="splash-fade-up mt-7 text-center"
-          style={{ '--splash-delay': isLoginMode ? '0.24s' : '0.68s' } as React.CSSProperties}
+          className="splash-fade-up mt-6 text-center"
+          style={{ '--splash-delay': isLoginMode ? '0.28s' : '0.72s' } as React.CSSProperties}
         >
-          <p
-            className={`text-lg sm:text-xl font-bold tracking-tight text-balance ${
-              isLight ? 'text-slate-900' : 'text-[#FCFCFC]'
-            }`}
-          >
-            {greetingText}
-          </p>
-          <p
-            className={`mt-1.5 text-xs font-semibold tracking-[0.18em] uppercase ${
-              isLight ? 'text-[#046540]' : 'text-emerald-400'
-            }`}
-          >
-            {subText}
-          </p>
+          {isLoginMode ? (
+            <>
+              <p
+                className={`text-base sm:text-lg font-bold tracking-tight text-balance ${
+                  isLight ? 'text-slate-900' : 'text-[#FCFCFC]'
+                }`}
+              >
+                {greetingText}
+              </p>
+              {subText && (
+                <p
+                  className={`mt-1 text-xs font-semibold tracking-[0.18em] uppercase ${
+                    isLight ? 'text-[#046540]' : 'text-emerald-400'
+                  }`}
+                >
+                  {subText}
+                </p>
+              )}
+            </>
+          ) : (
+            <p
+              className={`text-xs font-semibold tracking-[0.2em] uppercase ${
+                isLight ? 'text-[#046540]' : 'text-emerald-400'
+              }`}
+            >
+              {greetingText}
+            </p>
+          )}
         </div>
 
-        {/* Minimal forest-green progress sweep bar */}
+        {/* Minimal Forest-Green Progress Sweep Bar */}
         <div
-          className={`splash-fade-up mt-6 w-36 h-[3px] rounded-full overflow-hidden ${
+          className={`splash-fade-up mt-5 w-36 h-[3px] rounded-full overflow-hidden ${
             isLight ? 'bg-slate-200' : 'bg-white/12'
           }`}
-          style={{ '--splash-delay': isLoginMode ? '0.32s' : '0.82s' } as React.CSSProperties}
+          style={{ '--splash-delay': isLoginMode ? '0.34s' : '0.82s' } as React.CSSProperties}
         >
           <div
             className="splash-bar-slide h-full w-[42%] rounded-full"
