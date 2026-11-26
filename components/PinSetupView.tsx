@@ -99,7 +99,7 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
         logAnalyticsEvent('otp_reset_success', { portal: portalType });
         setSuccess('PIN successfully reset! Logging you in...');
         
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 600));
         
         const member = await getMemberByPhone(phone, portalType);
         if (member) {
@@ -157,8 +157,8 @@ const PinSetupView: React.FC<PinSetupViewProps> = ({ phone, onSuccess, onBack, i
         // 4. Show success message
         setSuccess(`PIN created successfully! Logging you in...`);
         
-        // Artificial delay for better UX visibility of success state
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Brief feedback pause before branded dashboard transition
+        await new Promise(resolve => setTimeout(resolve, 600));
 
         // 5. Auto-login via getMemberByPhone()
         console.log(`[PinSetup] Attempting auto-login for: ${phone}`);

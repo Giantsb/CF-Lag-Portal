@@ -21,6 +21,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 11);
@@ -128,8 +129,23 @@ const LoginView: React.FC<LoginViewProps> = ({ onSuccess, onRequireSetup, onRese
 
       <div className="bg-brand-dark rounded-2xl shadow-2xl p-8 w-full max-w-md border border-brand-border animate-fadeIn">
         <div className="text-center mb-8">
-          <div className="inline-block p-4 bg-brand-accent/10 rounded-3xl mb-4 text-brand-accent">
-            <GymPortalIcon className="w-10 h-10" />
+          <div className="flex justify-center mb-2.5">
+            {!logoError ? (
+              <div className="relative w-40 sm:w-44 aspect-[32/10] overflow-hidden shrink-0">
+                <img
+                  src="/assets/aistudio/input-onlinepngtools_6add7674.png"
+                  alt="House of Athletes"
+                  referrerPolicy="no-referrer"
+                  onError={() => setLogoError(true)}
+                  className="brand-logo-adaptive absolute left-1/2 top-1/2 w-[205%] max-w-none h-auto pointer-events-none"
+                  style={{ transform: 'translate(-49.9%, -43.1%)' }}
+                />
+              </div>
+            ) : (
+              <div className="inline-block p-4 bg-brand-accent/10 rounded-3xl text-brand-accent">
+                <GymPortalIcon className="w-10 h-10" />
+              </div>
+            )}
           </div>
           <h1 className="text-3xl font-bold text-brand-textPrimary mb-1">CrossFit Lagos</h1>
           <p className="text-brand-accent font-bold text-sm tracking-widest uppercase mb-4 opacity-80">Membership Portal</p>

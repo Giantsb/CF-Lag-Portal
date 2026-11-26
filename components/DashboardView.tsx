@@ -78,6 +78,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [isBottomMenuOpen, setIsBottomMenuOpen] = useState(false);
+  const [headerLogoError, setHeaderLogoError] = useState(false);
   const [hasLiveAnnouncements, setHasLiveAnnouncements] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'schedule' | 'policies' | 'wod'>('dashboard');
   const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
@@ -557,12 +558,28 @@ const DashboardView: React.FC<DashboardViewProps> = ({ member, onLogout, onUpdat
         <div className="max-w-5xl mx-auto px-4 lg:px-8 h-16 flex items-center justify-between gap-4">
           <button
             onClick={() => { setCurrentView('dashboard'); setIsBottomMenuOpen(false); }}
-            className="flex items-center gap-2.5 text-left group"
+            aria-label="CrossFit Lagos Dashboard"
+            className="flex items-center gap-3 text-left group min-h-[44px]"
           >
-            <DumbbellIcon className="w-7 h-7 text-brand-accent transition-transform group-hover:scale-105" />
-            <div>
-              <span className="font-bold text-base sm:text-lg text-brand-textPrimary leading-none block">CrossFit Lagos</span>
-              <span className="text-[10px] text-brand-textSecondary uppercase tracking-widest hidden sm:block">
+            {!headerLogoError ? (
+              <div className="relative w-[78px] sm:w-[86px] aspect-[100/44] overflow-hidden shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
+                <img
+                  src="/assets/aistudio/New_CF_logo-removebg-preview_33dc3adb.png"
+                  alt="House of Athletes CrossFit Lagos"
+                  referrerPolicy="no-referrer"
+                  onError={() => setHeaderLogoError(true)}
+                  className="brand-logo-adaptive absolute left-1/2 top-1/2 w-[144%] max-w-none h-auto pointer-events-none"
+                  style={{ transform: 'translate(-50%, -44.25%)' }}
+                />
+              </div>
+            ) : (
+              <span className="font-bold text-base sm:text-lg text-brand-textPrimary leading-none">
+                CrossFit Lagos
+              </span>
+            )}
+            <div className="hidden sm:flex items-center gap-3">
+              <span className="h-5 w-px bg-brand-border" aria-hidden="true" />
+              <span className="text-[11px] font-medium text-brand-textSecondary uppercase tracking-wider whitespace-nowrap">
                 {member.firstName} {member.lastName} · {member.package || 'Member'}
               </span>
             </div>

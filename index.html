@@ -122,6 +122,63 @@
       }
     }
 
+    /* Native Brand Splash Keyframes */
+    @keyframes splashGlowIn {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.82); }
+      to { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    @keyframes splashGlowBreathe {
+      0%, 100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.7; }
+      50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.95; }
+    }
+
+    @keyframes splashFrameDraw {
+      from { stroke-dashoffset: 1; opacity: 0.2; }
+      to { stroke-dashoffset: 0; opacity: 1; }
+    }
+
+    @keyframes splashLogoReveal {
+      0% {
+        opacity: 0;
+        transform: translateY(14px) scale(0.94);
+        filter: blur(4px);
+      }
+      65% {
+        opacity: 1;
+        transform: translateY(-2px) scale(1.015);
+        filter: blur(0px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0px);
+      }
+    }
+
+    @keyframes splashFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes splashBarSlide {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(320%); }
+    }
+
+    @keyframes splashEmberRise {
+      0% { transform: translateY(24px) scale(0.6); opacity: 0; }
+      20% { opacity: 0.7; }
+      85% { opacity: 0.25; }
+      100% { transform: translateY(-150px) scale(1.05); opacity: 0; }
+    }
+
     /* Fitness Loaders Keyframes */
     @keyframes barbellLift {
       0%, 100% { transform: translateY(18px) scale(0.98); }
@@ -176,9 +233,64 @@
     .announcement-glow-warning { --announcement-glow: rgba(245, 158, 11, 0.35); }
     .announcement-glow-urgent { --announcement-glow: rgba(239, 68, 68, 0.42); }
 
+    .splash-glow-anim {
+      animation:
+        splashGlowIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards,
+        splashGlowBreathe 3.4s ease-in-out 1s infinite;
+    }
+    .splash-frame-anim {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: splashFrameDraw 0.9s cubic-bezier(0.55, 0, 0.3, 1) 0.08s forwards;
+    }
+    .splash-logo-anim {
+      opacity: 0;
+      animation: splashLogoReveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.22s forwards;
+    }
+    .splash-fade-up {
+      opacity: 0;
+      animation: splashFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) var(--splash-delay, 0.65s) forwards;
+    }
+    .splash-bar-slide {
+      animation: splashBarSlide 1.35s ease-in-out infinite;
+    }
+    .splash-ember {
+      animation: splashEmberRise var(--ember-dur, 4.5s) linear var(--ember-delay, 0.4s) infinite;
+    }
+
+    .brand-logo-adaptive {
+      filter: invert(1) hue-rotate(180deg) brightness(1.06) contrast(1.08);
+    }
+    [data-theme='light'] .brand-logo-adaptive {
+      filter: none;
+    }
+
+    .splash-fast .splash-frame-anim {
+      animation-duration: 0.45s;
+      animation-delay: 0.02s;
+    }
+    .splash-fast .splash-logo-anim {
+      animation-duration: 0.5s;
+      animation-delay: 0.08s;
+    }
+    .splash-fast .splash-fade-up {
+      animation-duration: 0.4s;
+      animation-delay: 0.22s;
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      .animate-announcement-card {
-        animation: none;
+      .animate-announcement-card,
+      .splash-glow-anim,
+      .splash-frame-anim,
+      .splash-logo-anim,
+      .splash-fade-up,
+      .splash-bar-slide,
+      .splash-ember {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        stroke-dashoffset: 0 !important;
       }
     }
 
